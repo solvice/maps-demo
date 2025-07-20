@@ -4,10 +4,11 @@ import { MapWithContextMenu } from '@/components/map-with-context-menu';
 import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
 import { RouteControlPanel } from '@/components/route-control-panel';
+import { RouteInstructions } from '@/components/route-instructions';
 import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 type Coordinates = [number, number];
@@ -19,7 +20,9 @@ export default function Home() {
   const [destinationText, setDestinationText] = useState<string>('');
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 1,
     steps: false,
@@ -92,9 +95,19 @@ export default function Home() {
   // Auto-calculate route when both markers are placed or config changes
   useEffect(() => {
     if (origin && destination) {
-      console.log('Both markers placed, calculating route with config:', routeConfig);
-      // Use zero debounce during dragging for instant feedback, otherwise use small debounce
-      const debounceTime = isDragging ? 0 : 300;
+      // Use both state and ref to ensure we catch the dragging state correctly
+      const isCurrentlyDragging = isDragging || isDraggingRef.current;
+      const debounceTime = isCurrentlyDragging ? 0 : 300;
+      
+      console.log('Route calculation triggered:', {
+        isDragging,
+        isDraggingRef: isDraggingRef.current,
+        isCurrentlyDragging,
+        debounceTime,
+        origin: `${origin[1].toFixed(4)}, ${origin[0].toFixed(4)}`,
+        destination: `${destination[1].toFixed(4)}, ${destination[0].toFixed(4)}`
+      });
+      
       calculateRoute(origin, destination, routeConfig, debounceTime);
     }
   }, [origin, destination, routeConfig, calculateRoute, isDragging]);
@@ -126,11 +139,14 @@ export default function Home() {
   // Handle marker drag start
   const handleMarkerDragStart = (type: 'origin' | 'destination') => {
     setIsDragging(true);
-    console.log(`Started dragging ${type} marker`);
+    isDraggingRef.current = true;
+    console.log(`Started dragging ${type} marker - isDragging set to TRUE`);
   };
 
   // Handle marker drag events
   const handleMarkerDrag = (coords: Coordinates, type: 'origin' | 'destination') => {
+    console.log(`Dragging ${type} marker - isDragging state:`, isDragging, 'isDraggingRef:', isDraggingRef.current);
+    
     if (type === 'origin') {
       setOrigin(coords);
       // Update text with coordinates for immediate feedback
@@ -144,6 +160,8 @@ export default function Home() {
 
   const handleMarkerDragEnd = (coords: Coordinates, type: 'origin' | 'destination') => {
     setIsDragging(false);
+    isDraggingRef.current = false;
+    console.log(`Finished dragging ${type} marker - isDragging set to FALSE`);
     
     if (type === 'origin') {
       setOrigin(coords);
@@ -164,8 +182,6 @@ export default function Home() {
       });
       toast.success('Destination moved to new location');
     }
-    
-    console.log(`Finished dragging ${type} marker`);
   };
 
   // Handle autocomplete selection
@@ -228,6 +244,15 @@ export default function Home() {
     }
   };
 
+  // Handle route config change
+  const handleRouteConfigChange = (newConfig: RouteConfig) => {
+    setRouteConfig(newConfig);
+    // Show instructions when steps are enabled
+    if (newConfig.steps && !showInstructions) {
+      setShowInstructions(true);
+    }
+  };
+
   return (
     <main role="main" className="h-screen w-screen overflow-hidden relative">
       <RouteControlPanel
@@ -240,12 +265,19 @@ export default function Home() {
         vehicleType={routeConfig.vehicleType}
         onVehicleTypeChange={handleVehicleTypeChange}
         routeConfig={routeConfig}
-        onRouteConfigChange={setRouteConfig}
+        onRouteConfigChange={handleRouteConfigChange}
         route={route}
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
         onRouteHover={setHoveredRouteIndex}
       />
+      {showInstructions && routeConfig.steps && (
+        <RouteInstructions
+          route={route}
+          selectedRouteIndex={hoveredRouteIndex || 0}
+          onClose={() => setShowInstructions(false)}
+        />
+      )}
       <MapWithContextMenu 
         center={[3.7174, 51.0543]}
         onClick={handleMapClick}

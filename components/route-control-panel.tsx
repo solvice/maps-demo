@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Loader2, Clock, MapPin, Car, Bike, Truck, Settings } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
+import { RouteResponse } from '@/lib/solvice-api';
 import { useState } from 'react';
 
 type Coordinates = [number, number];
@@ -29,29 +30,6 @@ export interface RouteConfig {
   generate_hints?: boolean;
 }
 
-// Route response type matching the API
-interface RouteInfo {
-  routes: {
-    distance?: number;
-    duration?: number;
-    geometry?: string;
-    legs?: {
-      summary?: string;
-      distance?: number;
-      duration?: number;
-      weight?: number;
-      steps?: unknown[];
-    }[];
-    weight_name?: string;
-    weight?: number;
-  }[];
-  waypoints: {
-    hint?: string;
-    distance?: number;
-    name?: string;
-    location: [number, number];
-  }[];
-}
 
 interface RouteControlPanelProps {
   // Origin/Destination
@@ -71,7 +49,7 @@ interface RouteControlPanelProps {
   onRouteConfigChange: (config: RouteConfig) => void;
   
   // Route info
-  route: RouteInfo | null;
+  route: RouteResponse | null;
   loading: boolean;
   error: string | null;
   
@@ -149,7 +127,7 @@ export function RouteControlPanel({
           </Button>
         </div>
         {/* Vehicle Type Toggle Group */}
-        <div className="space-y-1">
+        <div className="flex justify-center">
           <ToggleGroup
             type="single"
             value={vehicleType || 'CAR'}

@@ -1,27 +1,78 @@
 import { Coordinates, isValidCoordinates } from './coordinates';
 
 // Response format matches Solvice API OpenAPI spec (RouteDto schema)
+export interface StepManeuver {
+  location: [number, number];
+  bearing_before: number;
+  bearing_after: number;
+  type: string;
+  modifier?: string;
+}
+
+export interface Intersection {
+  location: [number, number];
+  bearings: number[];
+  classes: string[];
+  entry: string[];
+  in?: number;
+  out?: number;
+}
+
+export interface RouteStep {
+  distance: number;
+  duration: number;
+  geometry: string;
+  weight: number;
+  name: string;
+  ref?: string;
+  pronunciation?: string;
+  destinations?: string;
+  exits?: string;
+  mode: string;
+  maneuver: StepManeuver;
+  intersections: Intersection[];
+  rotary_name?: string;
+  rotary_pronunciation?: string;
+}
+
+export interface Annotation {
+  distance: number[];
+  duration: number[];
+  datasources: number[];
+  nodes: number[];
+  weight: number[];
+  speed: number[];
+}
+
+export interface RouteLeg {
+  distance: number;
+  duration: number;
+  weight: number;
+  summary: string;
+  steps: RouteStep[];
+  annotation: Annotation;
+}
+
+export interface Route {
+  distance: number;
+  duration: number;
+  geometry?: any;
+  weight: number;
+  weight_name: string;
+  legs: RouteLeg[];
+}
+
+export interface Waypoint {
+  distance: number;
+  name: string;
+  location: [number, number];
+  hint: string;
+}
+
 export interface RouteResponse {
-  routes: {
-    distance?: number;
-    duration?: number;
-    geometry?: string;
-    legs?: {
-      summary?: string;
-      distance?: number;
-      duration?: number;
-      weight?: number;
-      steps?: unknown[];
-    }[];
-    weight_name?: string;
-    weight?: number;
-  }[];
-  waypoints: {
-    hint?: string;
-    distance?: number;
-    name?: string;
-    location: [number, number];
-  }[];
+  code: string;
+  routes: Route[];
+  waypoints: Waypoint[];
 }
 
 export interface CreateRouteOptions {
