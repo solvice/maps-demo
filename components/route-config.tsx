@@ -96,7 +96,7 @@ export function RouteConfigPane({ config, onConfigChange }: RouteConfigProps) {
       <SheetTrigger asChild>
         <Button 
           variant="outline" 
-          className="absolute bottom-4 left-4 z-20 bg-white shadow-lg"
+          className="absolute bottom-4 left-4 z-20 bg-white shadow-lg min-h-[44px] min-w-[44px]" // Enhanced touch target
           data-testid="route-config-trigger"
         >
           ⚙️ Config

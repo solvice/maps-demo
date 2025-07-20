@@ -205,7 +205,7 @@ export function AutocompleteInput({
                   key={`${result.address}-${index}`}
                   data-testid={`autocomplete-item-${index}`}
                   className={cn(
-                    "cursor-pointer px-3 py-2 text-sm hover:bg-gray-100",
+                    "cursor-pointer px-3 py-3 text-sm hover:bg-gray-100 min-h-[44px] flex items-center", // Enhanced touch target
                     highlightedIndex === index && "highlighted bg-gray-100"
                   )}
                   onClick={() => handleSelect(result)}

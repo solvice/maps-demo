@@ -95,17 +95,33 @@ export function MapWithContextMenu({
         console.log('Map context menu at:', { lng, lat, x, y });
       });
 
-      // Handle resize
+      // Handle resize and orientation changes
       const handleResize = () => {
         if (map.current) {
-          map.current.resize();
+          // Add a small delay to ensure the viewport has adjusted
+          setTimeout(() => {
+            if (map.current) {
+              map.current.resize();
+            }
+          }, 100);
         }
       };
 
+      const handleOrientationChange = () => {
+        // Handle orientation changes with longer delay
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+          }
+        }, 500);
+      };
+
       window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleOrientationChange);
 
       return () => {
         window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleOrientationChange);
         if (map.current) {
           map.current.remove();
           map.current = null;

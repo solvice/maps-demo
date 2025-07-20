@@ -90,10 +90,68 @@ export function Marker({
       el.appendChild(dot);
     }
 
+    // Add data attributes for testing
+    el.setAttribute('data-testid', `marker-${type}`);
+
     // Add click handler
     if (onClick) {
       el.addEventListener("click", onClick);
     }
+
+    // Add touch event handlers for mobile
+    let touchStartTime = 0;
+    let touchStartPos = { x: 0, y: 0 };
+    let longPressTimeout: NodeJS.Timeout;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartTime = Date.now();
+      touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      
+      // Set up long press for context menu on mobile
+      longPressTimeout = setTimeout(() => {
+        // Trigger context menu on long press
+        const contextMenuEvent = new CustomEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+        });
+        el.dispatchEvent(contextMenuEvent);
+      }, 500);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Cancel long press if user moves finger too much
+      const currentPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const distance = Math.sqrt(
+        Math.pow(currentPos.x - touchStartPos.x, 2) + 
+        Math.pow(currentPos.y - touchStartPos.y, 2)
+      );
+      
+      if (distance > 10) { // 10px threshold
+        clearTimeout(longPressTimeout);
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      clearTimeout(longPressTimeout);
+      
+      // Convert touch to click if it was a quick tap
+      const touchDuration = Date.now() - touchStartTime;
+      if (touchDuration < 300) { // Quick tap
+        const touch = e.changedTouches[0];
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        });
+        el.dispatchEvent(clickEvent);
+      }
+    };
+
+    // Add touch event listeners
+    el.addEventListener('touchstart', handleTouchStart, { passive: false });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // Create and add marker (v3+ syntax)
     const marker = new maplibregl.Marker({
@@ -147,6 +205,14 @@ export function Marker({
     markerRef.current = marker;
 
     return () => {
+      // Clear any pending long press timeout
+      clearTimeout(longPressTimeout);
+      
+      // Remove touch event listeners
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      
       if (markerRef.current) {
         markerRef.current.off("dragstart", handleDragStart);
         markerRef.current.off("drag", handleDrag);

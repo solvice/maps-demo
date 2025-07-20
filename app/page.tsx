@@ -172,7 +172,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <main role="main" className="h-screen w-screen overflow-hidden relative">
       <RouteConfigPane 
         config={routeConfig}
         onConfigChange={setRouteConfig}
@@ -212,6 +212,6 @@ export default function Home() {
         )}
         <RouteLayer route={route} />
       </MapWithContextMenu>
-    </div>
+    </main>
   );
 }

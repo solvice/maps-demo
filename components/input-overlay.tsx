@@ -45,7 +45,7 @@ export function InputOverlay({
   return (
     <div
       data-testid="input-overlay"
-      className="absolute top-4 left-4 z-10 bg-white rounded shadow p-3 sm:p-4"
+      className="absolute top-4 left-4 right-4 sm:right-auto z-10 bg-white rounded shadow p-3 sm:p-4 max-w-full sm:max-w-none"
       onClick={handleOverlayClick}
     >
       <div data-testid="input-container" className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
@@ -79,8 +79,9 @@ export function InputOverlay({
       {/* Status and route information */}
       <div className="mt-3 space-y-1">
         {loading && (
-          <div className="text-sm text-blue-600">
-            Calculating route...
+          <div data-testid="loading-indicator" className="flex items-center space-x-2 text-sm text-blue-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span>Calculating route...</span>
           </div>
         )}
 
