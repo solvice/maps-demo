@@ -3,14 +3,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Loader2, Clock, MapPin, Car, Bike, Truck, Settings } from 'lucide-react';
+import { Loader2, Clock, MapPin, Car, Bike, Truck } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
 import { RouteResponse } from '@/lib/solvice-api';
-import { useState } from 'react';
 
 type Coordinates = [number, number];
 
@@ -73,12 +68,7 @@ export function RouteControlPanel({
   error,
   onRouteHover
 }: RouteControlPanelProps) {
-  const [showExpertSettings, setShowExpertSettings] = useState(false);
 
-  // Helper function to update route config
-  const updateConfig = (updates: Partial<RouteConfig>) => {
-    onRouteConfigChange({ ...routeConfig, ...updates });
-  };
 
   // Format duration from seconds to readable format
   const formatDuration = (seconds: number): string => {
@@ -113,18 +103,9 @@ export function RouteControlPanel({
   return (
     <Card className="absolute top-4 left-4 w-72 z-10 shadow-lg" data-testid="route-control-panel">
       <CardContent className="p-3 space-y-3">
-        {/* Header with Solvice Maps Logo and Expert Settings */}
-        <div className="flex items-center justify-between pb-1 border-b">
+        {/* Header with Solvice Maps Logo */}
+        <div className="text-center pb-1 border-b">
           <h1 className="text-base font-bold text-primary">Solvice Maps</h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowExpertSettings(!showExpertSettings)}
-            className="h-6 w-6 p-0 hover:bg-muted"
-            title="Expert Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
         {/* Vehicle Type Toggle Group */}
         <div className="flex justify-center">
@@ -222,97 +203,6 @@ export function RouteControlPanel({
         )}
 
 
-        {/* Expert Settings Section */}
-        {showExpertSettings && (
-          <div className="space-y-2 pt-1 border-t">
-            {/* Route Engine */}
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Routing Engine</Label>
-              <Select
-                value={routeConfig.routingEngine || 'OSM'}
-                onValueChange={(value) => updateConfig({ routingEngine: value as RouteConfig['routingEngine'] })}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OSM">OpenStreetMap</SelectItem>
-                  <SelectItem value="TOMTOM">TomTom</SelectItem>
-                  <SelectItem value="GOOGLE">Google</SelectItem>
-                  <SelectItem value="ANYMAP">AnyMap</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Alternative Routes */}
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Alternative Routes</Label>
-              <Input
-                type="number"
-                min="0"
-                max="3"
-                value={routeConfig.alternatives || 1}
-                onChange={(e) => updateConfig({ alternatives: parseInt(e.target.value) || 1 })}
-                className="h-7 text-xs"
-              />
-            </div>
-
-            {/* Route Overview */}
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Route Detail</Label>
-              <Select
-                value={routeConfig.overview || 'full'}
-                onValueChange={(value) => updateConfig({ overview: value as RouteConfig['overview'] })}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full">Full Detail</SelectItem>
-                  <SelectItem value="simplified">Simplified</SelectItem>
-                  <SelectItem value="false">Minimal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Geometry Format */}
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Geometry Format</Label>
-              <Select
-                value={routeConfig.geometries || 'polyline'}
-                onValueChange={(value) => updateConfig({ geometries: value as RouteConfig['geometries'] })}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="polyline">Polyline</SelectItem>
-                  <SelectItem value="geojson">GeoJSON</SelectItem>
-                  <SelectItem value="polyline6">Polyline6</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Advanced Options */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Steps</Label>
-                <Switch
-                  checked={routeConfig.steps || false}
-                  onCheckedChange={(checked) => updateConfig({ steps: checked })}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Continue Straight</Label>
-                <Switch
-                  checked={routeConfig.continue_straight !== false}
-                  onCheckedChange={(checked) => updateConfig({ continue_straight: checked })}
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Instructions */}
         {!hasRoute && !loading && !error && (

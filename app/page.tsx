@@ -5,6 +5,7 @@ import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
 import { RouteControlPanel } from '@/components/route-control-panel';
 import { RouteInstructions } from '@/components/route-instructions';
+import { MapControls } from '@/components/map-controls';
 import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
@@ -23,6 +24,7 @@ export default function Home() {
   const isDraggingRef = useRef(false);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [mapStyle, setMapStyle] = useState('https://maps.solvice.io/tiles/styles/light.json');
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 1,
     steps: false,
@@ -271,6 +273,12 @@ export default function Home() {
         error={routeError || geocodingError}
         onRouteHover={setHoveredRouteIndex}
       />
+      <MapControls 
+        routeConfig={routeConfig}
+        onRouteConfigChange={setRouteConfig}
+        mapStyle={mapStyle}
+        onMapStyleChange={setMapStyle}
+      />
       {showInstructions && routeConfig.steps && (
         <RouteInstructions
           route={route}
@@ -280,6 +288,7 @@ export default function Home() {
       )}
       <MapWithContextMenu 
         center={[3.7174, 51.0543]}
+        style={mapStyle}
         onClick={handleMapClick}
         onSetOrigin={handleSetOrigin}
         onSetDestination={handleSetDestination}

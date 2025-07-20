@@ -162,22 +162,22 @@ export function RouteInstructions({ route, selectedRouteIndex = 0, onClose }: Ro
             {allSteps.map((step, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors overflow-hidden"
               >
                 <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-background border rounded-full">
                   {getManeuverIcon(step.maneuver.type, step.maneuver.modifier)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-tight">
+                  <p className="text-sm font-medium leading-tight break-words">
                     {getInstructionText(step)}
                   </p>
                   {step.distance > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1 break-words">
                       {formatDistance(step.distance)}
                     </p>
                   )}
                   {step.destinations && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1 break-words">
                       towards {step.destinations}
                     </p>
                   )}

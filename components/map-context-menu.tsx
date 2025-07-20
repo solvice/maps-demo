@@ -144,16 +144,18 @@ export function MapContextMenu({
         <ContextMenuItem 
           onClick={handleFromHere}
           data-testid="context-from-here"
-          className="cursor-pointer"
+          className="cursor-pointer flex items-center gap-2"
         >
-          📍 Set as origin (from here)
+          <div className="w-3 h-3 bg-green-500 rounded-full" />
+          Origin
         </ContextMenuItem>
         <ContextMenuItem 
           onClick={handleToHere}
           data-testid="context-to-here"
-          className="cursor-pointer"
+          className="cursor-pointer flex items-center gap-2"
         >
-          🎯 Set as destination (to here)
+          <div className="w-3 h-3 bg-red-500 rounded-full" />
+          Destination
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem disabled className="text-muted-foreground text-xs">
