@@ -8,6 +8,7 @@ import { decodePolyline } from '@/lib/polyline';
 interface RouteLayerProps {
   route: RouteResponse | null;
   geometryFormat?: 'polyline' | 'geojson' | 'polyline6';
+  highlightedRoute?: number | null;
   style?: {
     color?: string;
     width?: number;
@@ -28,7 +29,7 @@ const ROUTE_COLORS = [
   '#93c5fd'  // Light blue for alternatives
 ];
 
-export function RouteLayer({ route, geometryFormat = 'polyline', style = DEFAULT_STYLE }: RouteLayerProps) {
+export function RouteLayer({ route, geometryFormat = 'polyline', highlightedRoute = null, style = DEFAULT_STYLE }: RouteLayerProps) {
   const map = useMapContext();
 
   useEffect(() => {
@@ -102,6 +103,15 @@ export function RouteLayer({ route, geometryFormat = 'polyline', style = DEFAULT
             }
           });
 
+          // Determine line width based on highlighting
+          let lineWidth = 3; // Default for alternative routes
+          if (index === 0) {
+            lineWidth = style.width || DEFAULT_STYLE.width; // Primary route
+          }
+          if (highlightedRoute === index) {
+            lineWidth += 2; // Make highlighted route bigger
+          }
+
           // Add route layer
           map.addLayer({
             id: layerId,
@@ -113,7 +123,7 @@ export function RouteLayer({ route, geometryFormat = 'polyline', style = DEFAULT
             },
             paint: {
               'line-color': routeColor,
-              'line-width': index === 0 ? (style.width || DEFAULT_STYLE.width) : 3, // Primary route slightly thicker
+              'line-width': lineWidth,
               'line-opacity': style.opacity || DEFAULT_STYLE.opacity
             }
           });
@@ -143,7 +153,7 @@ export function RouteLayer({ route, geometryFormat = 'polyline', style = DEFAULT
         // Ignore cleanup errors
       }
     };
-  }, [map, route, geometryFormat, style.color, style.width, style.opacity]);
+  }, [map, route, geometryFormat, highlightedRoute, style.color, style.width, style.opacity]);
 
   return null; // This component doesn't render anything directly
 }

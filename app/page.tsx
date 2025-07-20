@@ -19,6 +19,7 @@ export default function Home() {
   const [destinationText, setDestinationText] = useState<string>('');
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 1,
     steps: false,
@@ -243,6 +244,7 @@ export default function Home() {
         route={route}
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
+        onRouteHover={setHoveredRouteIndex}
       />
       <MapWithContextMenu 
         center={[3.7174, 51.0543]}
@@ -268,7 +270,11 @@ export default function Home() {
             onDragEnd={handleMarkerDragEnd}
           />
         )}
-        <RouteLayer route={route} geometryFormat={routeConfig.geometries} />
+        <RouteLayer 
+          route={route} 
+          geometryFormat={routeConfig.geometries} 
+          highlightedRoute={hoveredRouteIndex}
+        />
       </MapWithContextMenu>
     </main>
   );

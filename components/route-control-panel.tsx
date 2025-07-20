@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Loader2, Clock, MapPin, Car, Bike, Footprints, Settings } from 'lucide-react';
+import { Loader2, Clock, MapPin, Car, Bike, Truck, Settings } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
 import { useState } from 'react';
 
@@ -74,6 +74,9 @@ interface RouteControlPanelProps {
   route: RouteInfo | null;
   loading: boolean;
   error: string | null;
+  
+  // Route highlighting
+  onRouteHover?: (routeIndex: number | null) => void;
 }
 
 export function RouteControlPanel({
@@ -89,7 +92,8 @@ export function RouteControlPanel({
   onRouteConfigChange,
   route,
   loading,
-  error
+  error,
+  onRouteHover
 }: RouteControlPanelProps) {
   const [showExpertSettings, setShowExpertSettings] = useState(false);
 
@@ -150,20 +154,17 @@ export function RouteControlPanel({
             type="single"
             value={vehicleType || 'CAR'}
             onValueChange={(value) => value && onVehicleTypeChange(value)}
-            className="justify-start"
+            className="justify-center"
             data-testid="vehicle-type-toggle"
           >
-            <ToggleGroupItem value="CAR" aria-label="Car" className="flex items-center gap-2">
+            <ToggleGroupItem value="CAR" aria-label="Car" className="flex items-center justify-center">
               <Car className="h-4 w-4" />
-              <span className="hidden sm:inline">Car</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="BIKE" aria-label="Bike" className="flex items-center gap-2">
+            <ToggleGroupItem value="TRUCK" aria-label="Truck" className="flex items-center justify-center">
+              <Truck className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="BIKE" aria-label="Bike" className="flex items-center justify-center">
               <Bike className="h-4 w-4" />
-              <span className="hidden sm:inline">Bike</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="FOOT" aria-label="Walking" className="flex items-center gap-2">
-              <Footprints className="h-4 w-4" />
-              <span className="hidden sm:inline">Walk</span>
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -211,22 +212,27 @@ export function RouteControlPanel({
         )}
 
         {hasRoute && !loading && (
-          <div className="space-y-1 pt-1 border-t" data-testid="route-info">
+          <div className="space-y-2 pt-2 border-t" data-testid="route-info">
             {route.routes.map((routeData, index) => (
               routeData.distance !== undefined && routeData.duration !== undefined && (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs">
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors"
+                  onMouseEnter={() => onRouteHover?.(index)}
+                  onMouseLeave={() => onRouteHover?.(null)}
+                >
+                  <div className="flex items-center gap-2 text-sm">
                     <div 
-                      className="w-2 h-2 rounded-full" 
+                      className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: routeColors[index] || routeColors[0] }}
                     />
-                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
                       {formatDuration(routeData.duration)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
                       {formatDistance(routeData.distance)}
                     </span>
