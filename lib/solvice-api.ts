@@ -49,13 +49,13 @@ export async function calculateRoute(
   destination: Coordinates,
   options?: CreateRouteOptions
 ): Promise<RouteResponse> {
-  // Validate coordinates
+  // Validate coordinates before making API call
   if (!isValidCoordinates(origin)) {
-    throw new Error('Invalid origin coordinates');
+    throw new Error('Invalid coordinates');
   }
   
   if (!isValidCoordinates(destination)) {
-    throw new Error('Invalid destination coordinates');
+    throw new Error('Invalid coordinates');
   }
 
   try {
@@ -73,33 +73,63 @@ export async function calculateRoute(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `Server error: ${response.status} ${response.statusText}`;
+      // Handle specific HTTP status codes
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+      
+      let errorMessage: string;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || `Route calculation failed: ${response.status} ${response.statusText}`;
+      } catch {
+        errorMessage = `Route calculation failed: ${response.status} ${response.statusText}`;
+      }
+      
       throw new Error(errorMessage);
     }
 
     let data: RouteResponse;
     try {
       data = await response.json();
-    } catch (error) {
-      throw new Error('Failed to parse route response');
+    } catch {
+      throw new Error('Failed to parse route response - invalid JSON');
     }
 
-    if (!data.routes || data.routes.length === 0) {
-      throw new Error('No routes found');
+    // Validate response structure
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid route response format');
+    }
+    
+    if (!data.routes || !Array.isArray(data.routes) || data.routes.length === 0) {
+      throw new Error('No routes found for the given coordinates');
     }
 
     return data;
   } catch (error) {
+    // Re-throw known errors as-is
     if (error instanceof Error) {
-      if (error.message.startsWith('Server error:') || 
+      // Network errors (fetch failures)
+      if (error.message.includes('fetch')) {
+        throw new Error('Network error - please check your connection');
+      }
+      
+      // Already formatted errors
+      if (error.message.startsWith('Route calculation failed:') || 
+          error.message.startsWith('Invalid coordinates') ||
+          error.message.startsWith('Rate limit exceeded') ||
           error.message.startsWith('Failed to parse route response') ||
-          error.message === 'No routes found' ||
-          error.message.includes('Route calculation')) {
+          error.message.startsWith('No routes found') ||
+          error.message.startsWith('Network error') ||
+          error.message.startsWith('Invalid route response')) {
         throw error;
       }
-      throw new Error(`Failed to calculate route: ${error.message}`);
+      
+      // Wrap unknown errors
+      throw new Error(`Route calculation failed: ${error.message}`);
     }
-    throw new Error('Failed to calculate route: Unknown error');
+    
+    // Fallback for non-Error objects
+    throw new Error('Route calculation failed: Unknown error');
   }
 }

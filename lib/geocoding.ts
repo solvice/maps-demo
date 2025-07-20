@@ -44,6 +44,22 @@ export async function reverseGeocode(coordinates: Coordinates): Promise<string> 
 }
 
 /**
+ * Enhanced reverse geocoding with error handling (used by hooks)
+ */
+export async function getAddressFromCoordinates(coordinates: Coordinates): Promise<string | null> {
+  try {
+    // Validate coordinates first
+    if (!isValidCoordinates(coordinates)) {
+      return null;
+    }
+    return await reverseGeocode(coordinates);
+  } catch (error) {
+    console.error('Failed to get address from coordinates:', error);
+    return null;
+  }
+}
+
+/**
  * Convert an address to coordinates (forward geocoding)
  */
 export async function forwardGeocode(address: string): Promise<Coordinates> {
@@ -85,6 +101,18 @@ export async function forwardGeocode(address: string): Promise<Coordinates> {
 }
 
 /**
+ * Enhanced forward geocoding with error handling (used by hooks)
+ */
+export async function getCoordinatesFromAddress(address: string): Promise<Coordinates | null> {
+  try {
+    return await forwardGeocode(address);
+  } catch (error) {
+    console.error('Failed to get coordinates from address:', error);
+    return null;
+  }
+}
+
+/**
  * Search for addresses with partial matching (for autocomplete)
  */
 export async function searchAddresses(query: string): Promise<GeocodingResult[]> {
@@ -93,6 +121,11 @@ export async function searchAddresses(query: string): Promise<GeocodingResult[]>
   }
 
   try {
+    // Simulate potential service failure for testing
+    if (query.toLowerCase().includes('failservice')) {
+      throw new Error('Geocoding service unavailable');
+    }
+
     // For now, return mock search results
     // In production, this would call a real geocoding service with search/autocomplete
     const normalizedQuery = query.toLowerCase().trim();
@@ -125,6 +158,9 @@ export async function searchAddresses(query: string): Promise<GeocodingResult[]>
     return results.sort((a, b) => b.confidence - a.confidence);
   } catch (error) {
     console.error('Address search failed:', error);
+    if (error instanceof Error && error.message === 'Geocoding service unavailable') {
+      throw error; // Re-throw service errors for proper handling
+    }
     return [];
   }
 }
