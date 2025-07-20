@@ -3,9 +3,8 @@
 import { MapWithContextMenu } from '@/components/map-with-context-menu';
 import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
-import { InputOverlay } from '@/components/input-overlay';
-import { RouteSidebar } from '@/components/route-sidebar';
-import { RouteConfigPane, RouteConfig } from '@/components/route-config';
+import { RouteControlPanel } from '@/components/route-control-panel';
+import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
 import { useState, useEffect } from 'react';
@@ -171,26 +170,29 @@ export default function Home() {
     });
   };
 
+  // Handle vehicle type change
+  const handleVehicleTypeChange = (newVehicleType: string) => {
+    const validVehicleTypes = ['CAR', 'BIKE', 'TRUCK', 'ELECTRIC_CAR', 'ELECTRIC_BIKE'] as const;
+    type VehicleType = typeof validVehicleTypes[number];
+    if (validVehicleTypes.includes(newVehicleType as VehicleType)) {
+      setRouteConfig(prev => ({ ...prev, vehicleType: newVehicleType as VehicleType }));
+    }
+  };
+
   return (
     <main role="main" className="h-screen w-screen overflow-hidden relative">
-      <RouteConfigPane 
-        config={routeConfig}
-        onConfigChange={setRouteConfig}
-      />
-      <InputOverlay
+      <RouteControlPanel
         origin={originText}
         destination={destinationText}
         onOriginChange={handleOriginTextChange}
         onDestinationChange={handleDestinationTextChange}
         onOriginSelect={handleOriginSelect}
         onDestinationSelect={handleDestinationSelect}
+        vehicleType={routeConfig.vehicleType}
+        onVehicleTypeChange={handleVehicleTypeChange}
+        route={route}
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
-        route={route}
-      />
-      <RouteSidebar 
-        route={route}
-        loading={routeLoading}
       />
       <MapWithContextMenu 
         center={[3.7174, 51.0543]}
