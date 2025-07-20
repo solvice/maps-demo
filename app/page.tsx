@@ -18,6 +18,7 @@ export default function Home() {
   const [originText, setOriginText] = useState<string>('');
   const [destinationText, setDestinationText] = useState<string>('');
   const [, setClickCount] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 1,
     steps: false,
@@ -91,10 +92,11 @@ export default function Home() {
   useEffect(() => {
     if (origin && destination) {
       console.log('Both markers placed, calculating route with config:', routeConfig);
-      // Use minimal debounce for immediate feedback during dragging
-      calculateRoute(origin, destination, routeConfig, 100); // Very short debounce for smooth dragging
+      // Use zero debounce during dragging for instant feedback, otherwise use small debounce
+      const debounceTime = isDragging ? 0 : 300;
+      calculateRoute(origin, destination, routeConfig, debounceTime);
     }
-  }, [origin, destination, routeConfig, calculateRoute]);
+  }, [origin, destination, routeConfig, calculateRoute, isDragging]);
 
   // Log route results
   useEffect(() => {
@@ -120,6 +122,12 @@ export default function Home() {
     }
   }, [geocodingError]);
 
+  // Handle marker drag start
+  const handleMarkerDragStart = (type: 'origin' | 'destination') => {
+    setIsDragging(true);
+    console.log(`Started dragging ${type} marker`);
+  };
+
   // Handle marker drag events
   const handleMarkerDrag = (coords: Coordinates, type: 'origin' | 'destination') => {
     if (type === 'origin') {
@@ -134,6 +142,8 @@ export default function Home() {
   };
 
   const handleMarkerDragEnd = (coords: Coordinates, type: 'origin' | 'destination') => {
+    setIsDragging(false);
+    
     if (type === 'origin') {
       setOrigin(coords);
       // Start reverse geocoding for better address
@@ -153,6 +163,8 @@ export default function Home() {
       });
       toast.success('Destination moved to new location');
     }
+    
+    console.log(`Finished dragging ${type} marker`);
   };
 
   // Handle autocomplete selection
@@ -240,6 +252,7 @@ export default function Home() {
           <Marker
             coordinates={origin}
             type="origin"
+            onDragStart={handleMarkerDragStart}
             onDrag={handleMarkerDrag}
             onDragEnd={handleMarkerDragEnd}
           />
@@ -248,6 +261,7 @@ export default function Home() {
           <Marker
             coordinates={destination}
             type="destination"
+            onDragStart={handleMarkerDragStart}
             onDrag={handleMarkerDrag}
             onDragEnd={handleMarkerDragEnd}
           />

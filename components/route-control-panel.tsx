@@ -90,6 +90,10 @@ export function RouteControlPanel({
   return (
     <Card className="absolute top-4 left-4 w-80 z-10 shadow-lg" data-testid="route-control-panel">
       <CardContent className="p-4 space-y-4">
+        {/* Solvice Maps Logo */}
+        <div className="text-center pb-2 border-b">
+          <h1 className="text-lg font-bold text-primary">Solvice Maps</h1>
+        </div>
         {/* Vehicle Type Toggle Group */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Transport Mode</Label>
