@@ -91,7 +91,8 @@ export default function Home() {
   useEffect(() => {
     if (origin && destination) {
       console.log('Both markers placed, calculating route with config:', routeConfig);
-      calculateRoute(origin, destination, routeConfig, 0); // No debounce for user clicks
+      // Use minimal debounce for immediate feedback during dragging
+      calculateRoute(origin, destination, routeConfig, 100); // Very short debounce for smooth dragging
     }
   }, [origin, destination, routeConfig, calculateRoute]);
 
@@ -118,6 +119,41 @@ export default function Home() {
       toast.error(`Address lookup failed: ${geocodingError}`);
     }
   }, [geocodingError]);
+
+  // Handle marker drag events
+  const handleMarkerDrag = (coords: Coordinates, type: 'origin' | 'destination') => {
+    if (type === 'origin') {
+      setOrigin(coords);
+      // Update text with coordinates for immediate feedback
+      setOriginText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+    } else {
+      setDestination(coords);
+      // Update text with coordinates for immediate feedback  
+      setDestinationText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+    }
+  };
+
+  const handleMarkerDragEnd = (coords: Coordinates, type: 'origin' | 'destination') => {
+    if (type === 'origin') {
+      setOrigin(coords);
+      // Start reverse geocoding for better address
+      getAddressFromCoordinates(coords).then(address => {
+        if (address) {
+          setOriginText(address);
+        }
+      });
+      toast.success('Origin moved to new location');
+    } else {
+      setDestination(coords);
+      // Start reverse geocoding for better address
+      getAddressFromCoordinates(coords).then(address => {
+        if (address) {
+          setDestinationText(address);
+        }
+      });
+      toast.success('Destination moved to new location');
+    }
+  };
 
   // Handle autocomplete selection
   const handleOriginSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
@@ -204,12 +240,16 @@ export default function Home() {
           <Marker
             coordinates={origin}
             type="origin"
+            onDrag={handleMarkerDrag}
+            onDragEnd={handleMarkerDragEnd}
           />
         )}
         {destination && (
           <Marker
             coordinates={destination}
             type="destination"
+            onDrag={handleMarkerDrag}
+            onDragEnd={handleMarkerDragEnd}
           />
         )}
         <RouteLayer route={route} />
