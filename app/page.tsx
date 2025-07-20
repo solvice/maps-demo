@@ -1,103 +1,217 @@
-import Image from "next/image";
+'use client';
+
+import { MapWithContextMenu } from '@/components/map-with-context-menu';
+import { Marker } from '@/components/marker';
+import { RouteLayer } from '@/components/route-layer';
+import { InputOverlay } from '@/components/input-overlay';
+import { RouteSidebar } from '@/components/route-sidebar';
+import { RouteConfigPane, RouteConfig } from '@/components/route-config';
+import { useRoute } from '@/hooks/use-route';
+import { useGeocoding } from '@/hooks/use-geocoding';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+type Coordinates = [number, number];
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [origin, setOrigin] = useState<Coordinates | null>(null);
+  const [destination, setDestination] = useState<Coordinates | null>(null);
+  const [originText, setOriginText] = useState<string>('');
+  const [destinationText, setDestinationText] = useState<string>('');
+  const [, setClickCount] = useState(0);
+  const [routeConfig, setRouteConfig] = useState<RouteConfig>({
+    alternatives: 1,
+    steps: false,
+    annotations: [],
+    geometries: 'polyline',
+    overview: 'full',
+    continue_straight: true,
+    snapping: 'default',
+    vehicleType: 'CAR',
+    routingEngine: 'OSM',
+    interpolate: false,
+    generate_hints: false,
+  });
+  const { route, error: routeError, loading: routeLoading, calculateRoute } = useRoute();
+  const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+  const handleMapClick = (coords: Coordinates) => {
+    // Normal click behavior
+    setClickCount(currentCount => {
+      const newCount = currentCount + 1;
+      console.log('Click count:', currentCount, '->', newCount);
+      
+      if (newCount === 1) {
+        console.log('First click - setting origin');
+        handleSetOrigin(coords);
+        toast.success('Origin placed! Click again for destination.');
+        return 1;
+      } else if (newCount === 2) {
+        console.log('Second click - setting destination');
+        handleSetDestination(coords);
+        toast.success('Destination placed!');
+        return 2;
+      } else {
+        console.log('Third+ click - moving origin');
+        handleSetOrigin(coords);
+        setDestination(null);
+        setDestinationText('');
+        toast.success('Origin moved! Click again for destination.');
+        return 1; // Reset to "first click" state
+      }
+    });
+  };
+
+  const handleSetOrigin = (coords: Coordinates) => {
+    setOrigin(coords);
+    // Start reverse geocoding for origin
+    getAddressFromCoordinates(coords).then(address => {
+      if (address) {
+        setOriginText(address);
+      } else {
+        setOriginText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+      }
+    });
+    toast.success('Origin moved to selected location');
+  };
+
+  const handleSetDestination = (coords: Coordinates) => {
+    setDestination(coords);
+    // Start reverse geocoding for destination
+    getAddressFromCoordinates(coords).then(address => {
+      if (address) {
+        setDestinationText(address);
+      } else {
+        setDestinationText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+      }
+    });
+    toast.success('Destination moved to selected location');
+  };
+
+  // Auto-calculate route when both markers are placed or config changes
+  useEffect(() => {
+    if (origin && destination) {
+      console.log('Both markers placed, calculating route with config:', routeConfig);
+      calculateRoute(origin, destination, routeConfig, 0); // No debounce for user clicks
+    }
+  }, [origin, destination, routeConfig, calculateRoute]);
+
+  // Log route results
+  useEffect(() => {
+    if (route && route.routes && route.routes[0] && route.routes[0].distance) {
+      console.log('Route calculated:', route);
+      toast.success(`Route found! ${Math.round(route.routes[0].distance / 1000)}km`);
+    }
+  }, [route]);
+
+  // Handle route errors
+  useEffect(() => {
+    if (routeError) {
+      console.error('Route error:', routeError);
+      toast.error(`Route calculation failed: ${routeError}`);
+    }
+  }, [routeError]);
+
+  // Handle geocoding errors
+  useEffect(() => {
+    if (geocodingError) {
+      console.error('Geocoding error:', geocodingError);
+      toast.error(`Address lookup failed: ${geocodingError}`);
+    }
+  }, [geocodingError]);
+
+  // Handle autocomplete selection
+  const handleOriginSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
+    setOrigin(result.coordinates);
+    setOriginText(result.address);
+    
+    // Clear destination when origin changes via autocomplete
+    setDestination(null);
+    setDestinationText('');
+    
+    console.log('Origin selected via autocomplete:', result);
+  };
+
+  const handleDestinationSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
+    setDestination(result.coordinates);
+    setDestinationText(result.address);
+    
+    console.log('Destination selected via autocomplete:', result);
+  };
+
+  const handleOriginTextChange = (value: string) => {
+    setOriginText(value);
+    
+    // Clear destination when origin changes via input (maintaining consistency)
+    setDestination(null);
+    setDestinationText('');
+    
+    // Forward geocode to get coordinates
+    getCoordinatesFromAddress(value).then(coordinates => {
+      if (coordinates) {
+        setOrigin(coordinates);
+        console.log('Origin updated via geocoding:', coordinates);
+      } else {
+        setOrigin(null);
+      }
+    });
+  };
+
+  const handleDestinationTextChange = (value: string) => {
+    setDestinationText(value);
+    
+    // Forward geocode to get coordinates
+    getCoordinatesFromAddress(value).then(coordinates => {
+      if (coordinates) {
+        setDestination(coordinates);
+        console.log('Destination updated via geocoding:', coordinates);
+      } else {
+        setDestination(null);
+      }
+    });
+  };
+
+  return (
+    <div className="h-screen w-screen overflow-hidden">
+      <RouteConfigPane 
+        config={routeConfig}
+        onConfigChange={setRouteConfig}
+      />
+      <InputOverlay
+        origin={originText}
+        destination={destinationText}
+        onOriginChange={handleOriginTextChange}
+        onDestinationChange={handleDestinationTextChange}
+        onOriginSelect={handleOriginSelect}
+        onDestinationSelect={handleDestinationSelect}
+        loading={routeLoading || geocodingLoading}
+        error={routeError || geocodingError}
+        route={route}
+      />
+      <RouteSidebar 
+        route={route}
+        loading={routeLoading}
+      />
+      <MapWithContextMenu 
+        center={[3.7174, 51.0543]}
+        onClick={handleMapClick}
+        onSetOrigin={handleSetOrigin}
+        onSetDestination={handleSetDestination}
+      >
+        {origin && (
+          <Marker
+            coordinates={origin}
+            type="origin"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        )}
+        {destination && (
+          <Marker
+            coordinates={destination}
+            type="destination"
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        )}
+        <RouteLayer route={route} />
+      </MapWithContextMenu>
     </div>
   );
 }

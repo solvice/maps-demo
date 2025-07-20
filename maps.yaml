@@ -1,0 +1,1972 @@
+---
+openapi: 3.1.0
+info:
+  title: Solvice Maps Routing API
+  version: 1.0.0
+servers:
+  - url: https://routing.solvice.io
+    description: Production server
+security:
+  - apikey: []
+components:
+  securitySchemes:
+    apikey:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Api Key based authentication (apikey)
+    SecurityScheme:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentication
+  headers:
+    X-RateLimit-Limit:
+      description: The number of allowed requests in the current period
+      schema:
+        type: integer
+        example: 100
+    X-RateLimit-Remaining:
+      description: The number of remaining requests in the current period
+      schema:
+        type: integer
+        example: 98
+        minimum: 0
+    X-RateLimit-Reset:
+      description: The time at which the current rate limit window resets (Unix timestamp)
+      schema:
+        type: integer
+        example: 1672531200
+  schemas:
+    CreateCubeDto:
+      type: object
+      required:
+        - coordinates
+      examples:
+        - coordinates:
+            - - 4.9
+              - 50.2
+            - - 4.8
+              - 50.4
+            - - 5.0
+              - 50.9
+            - - 5.05
+              - 50.9
+          sources:
+            - 0
+            - 1
+            - 2
+            - 3
+          destinations:
+            - 0
+            - 1
+            - 2
+            - 3
+      description: Cube Dto
+      properties:
+        coordinates:
+          type:
+            - array
+            - "null"
+          minItems: 2
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            "The coordinates this request will use, coordinates as [{lon},{lat}]\
+            \ values, in decimal degrees."
+        sources:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "An array of index elements (0 <= integer < #coordinates) to\
+            \ use location with given index as source. Default is to use all."
+        destinations:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "An array of index elements (0 <= integer < #coordinates) to\
+            \ use location with given index as destination. Default is to use all."
+        vehicleType:
+          type:
+            - string
+            - "null"
+          description: The vehicle type for which the table is requested
+          anyOf:
+            - $ref: "#/components/schemas/VehicleType"
+            - type: "null"
+        date:
+          type:
+            - string
+            - "null"
+          description:
+            The date for which you want to calculate the cube. This will
+            take into account predictive travel time based on TomTom data. Format
+            YYYY-MM-DD. Default is current date.
+          anyOf:
+            - $ref: "#/components/schemas/LocalDate"
+            - type: "null"
+        responseType:
+          type:
+            - string
+            - "null"
+          description:
+            "Specifies the type of response to return. Can be 'coefficients'\
+            \ (return polynomial coefficients, default) or 'matrix' (return travel\
+            \ time matrices)."
+    CreateRouteDto:
+      type: object
+      required:
+        - coordinates
+      examples:
+        - coordinates:
+            - - 4.9
+              - 50.2
+            - - 4.8
+              - 50.4
+      description: Route Dto
+      properties:
+        coordinates:
+          type:
+            - array
+            - "null"
+          minItems: 2
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            "The coordinates this request will use, coordinates as [{lon},{lat}]\
+            \ values, in decimal degrees."
+        bearings:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: integer
+              format: int32
+          description:
+            "Limits the search to segments with given bearing in degrees\
+            \ towards true north in clockwise direction. Can be null or an array of\
+            \ [{value},{range}] with integer 0 .. 360,integer 0 .. 180."
+        radiuses:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            Limits the coordinate snapping to streets in the given radius
+            in meters. Can be null double >= 0.
+        hints:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            Hints for the coordinate snapping. Array of base64 encoded
+            strings.
+        generate_hints:
+          type:
+            - boolean
+            - "null"
+          description:
+            "Whether or not adds a Hint to the response which can be used\
+            \ in subsequent requests. (optional, default true)"
+        alternatives:
+          type:
+            - integer
+            - "null"
+          format: int32
+          description:
+            "Search for up to this many alternative routes. Please note\
+            \ that even if alternative routes are requested, a result cannot be guaranteed.\
+            \ (optional, default 0)"
+          maximum: 10
+          minimum: 0
+        steps:
+          type:
+            - boolean
+            - "null"
+          description:
+            "Return route steps for each route leg. (optional, default\
+            \ false)"
+        annotations:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            "An array with strings of duration, nodes, distance, weight,\
+            \ datasources, speed (optional)"
+        geometries:
+          type:
+            - string
+            - "null"
+          pattern: polyline|geojson|polyline6
+          description:
+            "Returned route geometry format (influences overview and per\
+            \ step). Can also be geojson. (optional, default polyline)"
+        overview:
+          type:
+            - string
+            - "null"
+          pattern: full|simplified|false
+          description:
+            "Add overview geometry either full, simplified according to\
+            \ highest zoom level it could be display on, or not at all (false). (optional,\
+            \ default simplified)"
+        continue_straight:
+          type:
+            - boolean
+            - "null"
+          description:
+            Forces the route to keep going straight at waypoints and don't
+            do a uturn even if it would be faster. Default value depends on the profile.
+        approaches:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            "Keep waypoints on curb side. Can be null (unrestricted, default)\
+            \ or curb."
+        waypoints:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "Indices to coordinates to treat as waypoints. If not supplied,\
+            \ all coordinates are waypoints. Must include first and last coordinate\
+            \ index"
+        snapping:
+          type:
+            - string
+            - "null"
+          pattern: default|any
+        vehicleType:
+          type:
+            - string
+            - "null"
+          description: The vehicle type for which the table is requested
+          anyOf:
+            - $ref: "#/components/schemas/VehicleType"
+            - type: "null"
+        routingEngine:
+          type:
+            - string
+            - "null"
+          description: The vehicle type for which the table is requested
+          anyOf:
+            - $ref: "#/components/schemas/RoutingEngine"
+            - type: "null"
+        departureTime:
+          type:
+            - string
+            - "null"
+          description:
+            The departure time for which you want to calculate the route.
+            This will take into account predictive travel time based on TomTom data.
+          anyOf:
+            - $ref: "#/components/schemas/LocalDateTime"
+            - type: "null"
+        interpolate:
+          type:
+            - boolean
+            - "null"
+          description:
+            Enable linear interpolation between time slices for more accurate
+            results based on departure time
+    CreateTableDto:
+      type: object
+      required:
+        - coordinates
+      examples:
+        - coordinates:
+            - - 4.9
+              - 50.2
+            - - 4.8
+              - 50.4
+            - - 5.0
+              - 50.9
+            - - 5.05
+              - 50.9
+      description: Table Dto
+      properties:
+        coordinates:
+          type: array
+          minItems: 2
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            "The coordinates this request will use, coordinates as [{lon},{lat}]\
+            \ values, in decimal degrees."
+        sources:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "An array of index elements (0 <= integer < #coordinates) to\
+            \ use location with given index as source. Default is to use all."
+        destinations:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "An array of index elements (0 <= integer < #coordinates) to\
+            \ use location with given index as destination. Default is to use all."
+        annotations:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            "Return the requested table or tables in response. Can be ['duration']\
+            \ (return the duration matrix, default) or ['duration', distance'] (return\
+            \ both the duration matrix and the distance matrix)."
+        vehicleType:
+          type:
+            - string
+            - "null"
+          description: The vehicle type for which the table is requested
+          anyOf:
+            - $ref: "#/components/schemas/VehicleType"
+            - type: "null"
+        engine:
+          type:
+            - string
+            - "null"
+          description: "Routing data engine being used: OpenStreetMap (OSM) or TomTom."
+          anyOf:
+            - $ref: "#/components/schemas/RoutingEngine"
+            - type: "null"
+        departureTime:
+          type:
+            - string
+            - "null"
+          description:
+            The departure time (ISO8601) for which you want to calculate
+            the route. This will take into account predictive travel time based on
+            TomTom data.
+          anyOf:
+            - $ref: "#/components/schemas/LocalDateTime"
+            - type: "null"
+        interpolate:
+          type:
+            - boolean
+            - "null"
+          description:
+            Enable linear interpolation between time slices for more accurate
+            results based on departure time
+    CreateTripDto:
+      type: object
+      required:
+        - coordinates
+      properties:
+        coordinates:
+          type:
+            - array
+            - "null"
+          minItems: 2
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            "The coordinates this request will use, coordinates as [{lon},{lat}]\
+            \ values, in decimal degrees."
+        bearings:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: integer
+              format: int32
+          description:
+            "Limits the search to segments with given bearing in degrees\
+            \ towards true north in clockwise direction. Can be null or an array of\
+            \ [{value},{range}] with integer 0 .. 360,integer 0 .. 180."
+        radiuses:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            Limits the coordinate snapping to streets in the given radius
+            in meters. Can be null double >= 0.
+        hints:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            Hints for the coordinate snapping. Array of base64 encoded
+            strings.
+        generate_hints:
+          type:
+            - boolean
+            - "null"
+          description:
+            "Whether or not adds a Hint to the response which can be used\
+            \ in subsequent requests. (optional, default true)"
+        steps:
+          type:
+            - boolean
+            - "null"
+          description: "Return route steps for each route. (optional, default false)"
+        annotations:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            "An array with strings of duration, nodes, distance, weight,\
+            \ datasources, speed or boolean for enabling/disabling all. (optional,\
+            \ default false)"
+        geometries:
+          type:
+            - string
+            - "null"
+          pattern: polyline|geojson|polyline6
+          description:
+            "Returned route geometry format (influences overview and per\
+            \ step). Can also be geojson. (optional, default polyline)"
+        overview:
+          type:
+            - string
+            - "null"
+          pattern: full|simplified|false
+          description:
+            "Add overview geometry either full, simplified (optional, default\
+            \ simplified)"
+        roundtrip:
+          type:
+            - boolean
+            - "null"
+          description: "Return route is a roundtrip. (optional, default true)"
+        source:
+          type:
+            - string
+            - "null"
+          examples:
+            - any
+          pattern: any|first
+          description:
+            "Return route starts at `any` or `first` coordinate. (optional,\
+            \ default `any`)"
+        destination:
+          type:
+            - string
+            - "null"
+          examples:
+            - any
+          pattern: any|first
+          description:
+            "Return route ends at any or last coordinate. (optional, default\
+            \ any)"
+        approaches:
+          type:
+            - string
+            - "null"
+          examples:
+            - curb
+          pattern: unrestricted|curb
+          description:
+            "Keep waypoints on curb side. Can be null (unrestricted, default)\
+            \ or curb."
+        snapping:
+          type:
+            - string
+            - "null"
+          examples:
+            - curb
+          pattern: default|any
+          description:
+            "Keep waypoints on curb side. Can be null (unrestricted, default)\
+            \ or curb."
+        vehicleType:
+          type:
+            - string
+            - "null"
+          description: The vehicle type for which the table is requested
+          anyOf:
+            - $ref: "#/components/schemas/VehicleType"
+            - type: "null"
+        engine:
+          type:
+            - string
+            - "null"
+          description: "Routing data engine being used: OpenStreetMap (OSM) or TomTom."
+          anyOf:
+            - $ref: "#/components/schemas/RoutingEngine"
+            - type: "null"
+        departureTime:
+          type:
+            - string
+            - "null"
+          examples:
+            - 2020-01-01T12:00:00
+          description:
+            The departure time for which you want to calculate the route.
+            This will take into account predictive travel time based on TomTom data.
+          anyOf:
+            - $ref: "#/components/schemas/LocalDateTime"
+            - type: "null"
+    CubeDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Cube id.
+        status:
+          type:
+            - string
+            - "null"
+          description: "Cube status (IN_PROGRESS, SUCCEEDED, FAILED)."
+          anyOf:
+            - $ref: "#/components/schemas/Status"
+            - type: "null"
+        errorMessage:
+          type:
+            - string
+            - "null"
+          description: Error message if the Cube failed.
+        responseType:
+          type:
+            - string
+            - "null"
+          description: "Type of the Cube response, e.g., 'coefficients'."
+        hash:
+          type:
+            - integer
+            - "null"
+          format: int32
+          description: Hash of the Cube request
+        cubeResponseId:
+          type: integer
+          format: int64
+          description: Cube response id.
+        updatedAt:
+          type:
+            - string
+            - "null"
+          description: Last update time of the Cube.
+        createdAt:
+          type:
+            - string
+            - "null"
+          description: Creation time of the Cube.
+    CubePageDto:
+      type: object
+      required:
+        - embedded
+        - page
+      properties:
+        embedded:
+          $ref: "#/components/schemas/CubePageEmbeddedDto"
+        page:
+          $ref: "#/components/schemas/PageDto"
+    CubePageEmbeddedDto:
+      type: object
+      required:
+        - cubes
+      properties:
+        cubes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CubeDto"
+    CubeProgressDto:
+      type: object
+      properties:
+        nrOfSucceededSlices:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 8
+          description:
+            "Cube requests get split up into multiple Table requests, one\
+            \ for each slice. `nrOfSucceededSlices` is the number of slice requests\
+            \ that succeeded."
+        nrOfFailedSlices:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 0
+          description:
+            "Cube requests get split up into multiple Table requests, one\
+            \ for each slice. `nrOfFailedSlices` is the number of slice requests that\
+            \ failed."
+        nrOfSlices:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 8
+          description:
+            "Cube requests get split up into multiple Table requests, one\
+            \ for each slice. `nrOfSlices` is the total number of slice requests."
+    CubeResponseDto:
+      type: object
+      examples:
+        - destinations:
+            - hint: eX5AgduYjYYsAAAAlAAAAHIAAAAAAAAAxBf6QX7HzELIz51CAAAAACwAAACUAAAAcgAAAAAAAAAVtwAAlMNKAIj__QKgxEoAwP39AgEAXwRPrDVe
+              distance: 54.20808645369059
+              name: Avenue de la Restauration
+              location:
+                - 4.899732
+                - 50.200456
+            - hint: o_v2gPMxk4KXAAAAQwAAAJsAAADWAwAA4YOXQ0HtBEOh05pDGnn1RJcAAABDAAAAmwAAANYDAAAVtwAAEyhJAG0BAQMAPkkAAAsBAwMAXxRPrDVe
+              distance: 483.4921257061384
+              name: Route des Trois Communes
+              location:
+                - 4.794387
+                - 50.397549
+            - hint: WvwMgrAseoRNAAAAAAAAALwAAAAAAAAAvYZVQgAAAAAK0AFDAAAAAE0AAAAAAAAAvAAAAAAAAAAVtwAAI1ZMAPmtCANAS0wAIKwIAwYAXw9PrDVe
+              distance: 202.89814553989248
+              name: Wittebos
+              location:
+                - 5.002787
+                - 50.900473
+            - hint: GtVBggTgEIkDAAAADwAAAMUAAAAAAAAAbWKjQHMstUHaEZlDAAAAAAMAAAAPAAAAxQAAAAAAAAAVtwAA-Q5NAN2rCAOQDk0AIKwIAwsAHw5PrDVe
+              distance: 10.496399718824598
+              name: Tiensestraat
+              location:
+                - 5.050105
+                - 50.899933
+          coordinates:
+            - - 0
+              - 1976.1
+              - 5772.3
+              - 5642.6
+            - - 2010.2
+              - 0
+              - 4783.9
+              - 4654.2
+            - - 5817.2
+              - 4797.4
+              - 0
+              - 508.6
+            - - 5705.3
+              - 4685.5
+              - 530.2
+              - 0
+          sources:
+            - hint: eX5AgduYjYYsAAAAlAAAAHIAAAAAAAAAxBf6QX7HzELIz51CAAAAACwAAACUAAAAcgAAAAAAAAAVtwAAlMNKAIj__QKgxEoAwP39AgEAXwRPrDVe
+              distance: 54.20808645369059
+              name: Avenue de la Restauration
+              location:
+                - 4.899732
+                - 50.200456
+            - hint: o_v2gPMxk4KXAAAAQwAAAJsAAADWAwAA4YOXQ0HtBEOh05pDGnn1RJcAAABDAAAAmwAAANYDAAAVtwAAEyhJAG0BAQMAPkkAAAsBAwMAXxRPrDVe
+              distance: 483.4921257061384
+              name: Route des Trois Communes
+              location:
+                - 4.794387
+                - 50.397549
+            - hint: WvwMgrAseoRNAAAAAAAAALwAAAAAAAAAvYZVQgAAAAAK0AFDAAAAAE0AAAAAAAAAvAAAAAAAAAAVtwAAI1ZMAPmtCANAS0wAIKwIAwYAXw9PrDVe
+              distance: 202.89814553989248
+              name: Wittebos
+              location:
+                - 5.002787
+                - 50.900473
+            - hint: GtVBggTgEIkDAAAADwAAAMUAAAAAAAAAbWKjQHMstUHaEZlDAAAAAAMAAAAPAAAAxQAAAAAAAAAVtwAA-Q5NAN2rCAOQDk0AIKwIAwsAHw5PrDVe
+              distance: 10.496399718824598
+              name: Tiensestraat
+              location:
+                - 5.050105
+                - 50.899933
+      description: Cube Response
+      properties:
+        tableId:
+          type: integer
+          format: int64
+          description: Table response id. Not to be confused with table request id.
+        durations:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            Time distance matrix. In order of sources to destinations indexes
+            in request.
+        distances:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            Distance matrix. In order of sources to destinations indexes
+            in request.
+        sources:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Waypoint"
+          description: Actual sources snapped to map.
+        destinations:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Waypoint"
+          description: Actual destinations snapped to map.
+        durationSlices:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+                format: double
+          description:
+            Time distance matrix. In order of sources to destinations indexes
+            in request.
+        coefficients:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+                format: double
+          description:
+            Travel Time cube. In order of sources to destinations indexes
+            in request. Inner array is list of 6 coefficients.
+        slices:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/SliceDto"
+          description:
+            Time slice information indicating which time periods each slice
+            represents.
+    DatabaseMetrics:
+      type: object
+      required:
+        - tables
+      properties:
+        inProgressCount:
+          type: integer
+          format: int64
+        tables:
+          type: array
+          items:
+            $ref: "#/components/schemas/InProgressTableInfo"
+        oldestInProgressDate:
+          anyOf:
+            - $ref: "#/components/schemas/LocalDateTime"
+            - type: "null"
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+    InProgressTableInfo:
+      type: object
+      required:
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        sequenceNumber:
+          type:
+            - integer
+            - "null"
+          format: int32
+        nrOfSources:
+          type:
+            - integer
+            - "null"
+          format: int32
+        nrOfDestinations:
+          type:
+            - integer
+            - "null"
+          format: int32
+        createdAt:
+          $ref: "#/components/schemas/LocalDateTime"
+        isParent:
+          type: boolean
+        childrenCount:
+          type: integer
+          format: int32
+        parentId:
+          type:
+            - integer
+            - "null"
+          format: int64
+    LocalDate:
+      type: string
+      format: date
+      examples:
+        - 2022-03-10
+    LocalDateTime:
+      type: string
+      format: date-time
+      examples:
+        - 2022-03-10T12:15:50
+    PageDto:
+      type: object
+      properties:
+        number:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+    PubsubEvent:
+      type: object
+      properties:
+        message:
+          anyOf:
+            - $ref: "#/components/schemas/PubsubMessage"
+            - type: "null"
+        subscription:
+          type:
+            - string
+            - "null"
+    PubsubMessage:
+      type: object
+      properties:
+        data:
+          type:
+            - string
+            - "null"
+        messageId:
+          type:
+            - string
+            - "null"
+    PubsubMetrics:
+      type: object
+      properties:
+        approximateMessageCount:
+          type:
+            - integer
+            - "null"
+          format: int64
+        subscriptionName:
+          type:
+            - string
+            - "null"
+    Route:
+      type: object
+      properties:
+        distance:
+          type:
+            - number
+            - "null"
+          format: double
+          description: "The distance traveled by the route, in `float` meters."
+        duration:
+          type:
+            - number
+            - "null"
+          format: double
+          description: "The estimated travel time, in `float` number of seconds."
+        geometry:
+          type:
+            - string
+            - "null"
+          description:
+            "The whole geometry of the route value depending on overview\
+            \ parameter, format depending on the geometries parameter. See RouteStep's\
+            \ geometry field for a parameter documentation."
+        legs:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/RouteLeg"
+          description: Represents a route between two waypoints.
+    RouteDto:
+      type: object
+      examples:
+        - routes:
+            - geometry: "{wkqHi~{\\tLb\\uEvH{mA{`@{~Bnr@gSwKkQsp@iDkjBsn@uS}rAtr@ccBt}AuhBxEal@_Ow}AblCqfA~a@mn@{A_Vz~@w|@x{@{PmP{CikA}Sg|@ec@ve@y[xzEyGbLmLmJolA~yCwaB|_B"
+              legs:
+                - steps: []
+                  summary: ""
+                  weight: 1976.1
+                  duration: 1976.1
+                  distance: 31561.2
+              weight_name: routability
+              weight: 1976.1
+              duration: 1976.1
+              distance: 31561.2
+          waypoints:
+            - hint: eX5AgduYjYYsAAAAlAAAAHIAAAAAAAAAxBf6QX7HzELIz51CAAAAACwAAACUAAAAcgAAAAAAAAAVtwAAlMNKAIj__QKgxEoAwP39AgEAXwRPrDVe
+              distance: 54.20808645369059
+              name: Avenue de la Restauration
+              location:
+                - 4.899732
+                - 50.200456
+            - hint: o_v2gPMxk4KXAAAAQwAAAJsAAADWAwAA4YOXQ0HtBEOh05pDGnn1RJcAAABDAAAAmwAAANYDAAAVtwAAEyhJAG0BAQMAPkkAAAsBAwMAXxRPrDVe
+              distance: 483.4921257061384
+              name: Route des Trois Communes
+              location:
+                - 4.794387
+                - 50.397549
+      description: Route response
+      properties:
+        routes:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Route"
+          description: Represents a route through (potentially multiple) waypoints.
+        waypoints:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Waypoint"
+          description: List of waypoints to get from A to B.
+    RouteLeg:
+      type: object
+      properties:
+        summary:
+          type:
+            - string
+            - "null"
+        distance:
+          type:
+            - number
+            - "null"
+          format: double
+          description: "The distance traveled by the route, in `float` meters."
+        duration:
+          type:
+            - number
+            - "null"
+          format: double
+          description: "The estimated travel time, in `float` number of seconds."
+        weight:
+          type:
+            - number
+            - "null"
+          format: double
+    RoutingEngine:
+      type: string
+      enum:
+        - OSM
+        - TOMTOM
+        - GOOGLE
+        - ANYMAP
+    SliceDto:
+      type: object
+      description: Time slice information
+      properties:
+        sliceNumber:
+          type:
+            - integer
+            - "null"
+          format: int32
+          description: Slice number identifier
+        startHour:
+          type:
+            - number
+            - "null"
+          format: double
+          description: Start hour of the time slice (24-hour format)
+        endHour:
+          type:
+            - number
+            - "null"
+          format: double
+          description: End hour of the time slice (24-hour format)
+    Status:
+      type: string
+      enum:
+        - IN_PROGRESS
+        - SUCCEEDED
+        - FAILED
+    StatusSummary:
+      type: object
+      properties:
+        totalInProgress:
+          type: integer
+          format: int64
+        hasStuckRequests:
+          type: boolean
+        stuckThresholdMinutes:
+          type: integer
+          format: int32
+    TableDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Table id.
+        status:
+          type:
+            - string
+            - "null"
+          description: "Table status (IN_PROGRESS, SUCCEEDED, FAILED)."
+          anyOf:
+            - $ref: "#/components/schemas/Status"
+            - type: "null"
+        errorMessage:
+          type:
+            - string
+            - "null"
+          description: Error message if the Cube failed.
+        hash:
+          type:
+            - integer
+            - "null"
+          format: int32
+          description: Hash of the Cube request
+        tableResponseId:
+          type: integer
+          format: int64
+          description: Table response id.
+        updatedAt:
+          type:
+            - string
+            - "null"
+          description: Last update time of the table.
+        createdAt:
+          type:
+            - string
+            - "null"
+          description: Creation time of the table.
+    TablePageDto:
+      type: object
+      required:
+        - embedded
+        - page
+      properties:
+        embedded:
+          $ref: "#/components/schemas/TablePageEmbeddedDto"
+        page:
+          $ref: "#/components/schemas/PageDto"
+    TablePageEmbeddedDto:
+      type: object
+      required:
+        - tables
+      properties:
+        tables:
+          type: array
+          items:
+            $ref: "#/components/schemas/TableDto"
+    TableProgressDto:
+      type: object
+      properties:
+        nrOfSucceededChildren:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 8
+          description:
+            Bigger table requests get split up. `nrOfSucceededChildren`
+            is the number of child requests that succeeded.
+        nrOfFailedChildren:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 0
+          description:
+            Bigger table requests get split up. `nrOfFailedChildren` is
+            the number of child requests that failed.
+        nrOfChildren:
+          type:
+            - integer
+            - "null"
+          format: int64
+          examples:
+            - 8
+          description:
+            Bigger table requests get split up. `nrOfChildren` is the number
+            of total child requests.
+    TableRequestDto:
+      type: object
+      required:
+        - coordinates
+      properties:
+        id:
+          type: integer
+          format: int64
+          description:
+            Bigger table requests get split up. `nrOfSucceededChildren`
+            is the number of child requests that succeeded.
+        coordinates:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            "The coordinates this request will use, coordinates as [{lon},{lat}]\
+            \ values, in decimal degrees."
+        sources:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "Use location with given `index` as source, mind that `0 <=\
+            \ integer < #locations`"
+        destinations:
+          type:
+            - array
+            - "null"
+          items:
+            type: integer
+            format: int32
+          description:
+            "Use location with given `index` as destination, mind that\
+            \ `0 <= integer < #locations`"
+        annotations:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description:
+            "An array with strings of duration, nodes, distance, weight,\
+            \ datasources, speed (optional)"
+    TableResponseDto:
+      type: object
+      examples:
+        - destinations:
+            - hint: eX5AgduYjYYsAAAAlAAAAHIAAAAAAAAAxBf6QX7HzELIz51CAAAAACwAAACUAAAAcgAAAAAAAAAVtwAAlMNKAIj__QKgxEoAwP39AgEAXwRPrDVe
+              distance: 54.20808645369059
+              name: Avenue de la Restauration
+              location:
+                - 4.899732
+                - 50.200456
+            - hint: o_v2gPMxk4KXAAAAQwAAAJsAAADWAwAA4YOXQ0HtBEOh05pDGnn1RJcAAABDAAAAmwAAANYDAAAVtwAAEyhJAG0BAQMAPkkAAAsBAwMAXxRPrDVe
+              distance: 483.4921257061384
+              name: Route des Trois Communes
+              location:
+                - 4.794387
+                - 50.397549
+            - hint: WvwMgrAseoRNAAAAAAAAALwAAAAAAAAAvYZVQgAAAAAK0AFDAAAAAE0AAAAAAAAAvAAAAAAAAAAVtwAAI1ZMAPmtCANAS0wAIKwIAwYAXw9PrDVe
+              distance: 202.89814553989248
+              name: Wittebos
+              location:
+                - 5.002787
+                - 50.900473
+            - hint: GtVBggTgEIkDAAAADwAAAMUAAAAAAAAAbWKjQHMstUHaEZlDAAAAAAMAAAAPAAAAxQAAAAAAAAAVtwAA-Q5NAN2rCAOQDk0AIKwIAwsAHw5PrDVe
+              distance: 10.496399718824598
+              name: Tiensestraat
+              location:
+                - 5.050105
+                - 50.899933
+          durations:
+            - - 0
+              - 1976.1
+              - 5772.3
+              - 5642.6
+            - - 2010.2
+              - 0
+              - 4783.9
+              - 4654.2
+            - - 5817.2
+              - 4797.4
+              - 0
+              - 508.6
+            - - 5705.3
+              - 4685.5
+              - 530.2
+              - 0
+          sources:
+            - hint: eX5AgduYjYYsAAAAlAAAAHIAAAAAAAAAxBf6QX7HzELIz51CAAAAACwAAACUAAAAcgAAAAAAAAAVtwAAlMNKAIj__QKgxEoAwP39AgEAXwRPrDVe
+              distance: 54.20808645369059
+              name: Avenue de la Restauration
+              location:
+                - 4.899732
+                - 50.200456
+            - hint: o_v2gPMxk4KXAAAAQwAAAJsAAADWAwAA4YOXQ0HtBEOh05pDGnn1RJcAAABDAAAAmwAAANYDAAAVtwAAEyhJAG0BAQMAPkkAAAsBAwMAXxRPrDVe
+              distance: 483.4921257061384
+              name: Route des Trois Communes
+              location:
+                - 4.794387
+                - 50.397549
+            - hint: WvwMgrAseoRNAAAAAAAAALwAAAAAAAAAvYZVQgAAAAAK0AFDAAAAAE0AAAAAAAAAvAAAAAAAAAAVtwAAI1ZMAPmtCANAS0wAIKwIAwYAXw9PrDVe
+              distance: 202.89814553989248
+              name: Wittebos
+              location:
+                - 5.002787
+                - 50.900473
+            - hint: GtVBggTgEIkDAAAADwAAAMUAAAAAAAAAbWKjQHMstUHaEZlDAAAAAAMAAAAPAAAAxQAAAAAAAAAVtwAA-Q5NAN2rCAOQDk0AIKwIAwsAHw5PrDVe
+              distance: 10.496399718824598
+              name: Tiensestraat
+              location:
+                - 5.050105
+                - 50.899933
+      description: Table Response
+      properties:
+        tableId:
+          type: integer
+          format: int64
+          description: Table response id. Not to be confused with table request id.
+        durations:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            Time distance matrix. In order of sources to destinations indexes
+            in request.
+        distances:
+          type:
+            - array
+            - "null"
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+          description:
+            Distance matrix. In order of sources to destinations indexes
+            in request.
+        sources:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Waypoint"
+          description: Actual sources snapped to map.
+        destinations:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Waypoint"
+          description: Actual destinations snapped to map.
+    TableStatusDto:
+      type: object
+      required:
+        - databaseMetrics
+        - summary
+      properties:
+        databaseMetrics:
+          $ref: "#/components/schemas/DatabaseMetrics"
+        pubsubMetrics:
+          anyOf:
+            - $ref: "#/components/schemas/PubsubMetrics"
+            - type: "null"
+        summary:
+          $ref: "#/components/schemas/StatusSummary"
+    TripDto:
+      type: object
+      examples:
+        - coordinates:
+            - - 4.9
+              - 50.2
+            - - 4.8
+              - 50.4
+      description: Trip response
+      properties:
+        waypoints:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/TripWaypoint"
+        trips:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/Route"
+    TripWaypoint:
+      type: object
+      properties:
+        trips_index:
+          type:
+            - integer
+            - "null"
+          format: int32
+        waypoint_index:
+          type:
+            - integer
+            - "null"
+          format: int32
+    VehicleType:
+      type: string
+      enum:
+        - CAR
+        - BIKE
+        - TRUCK
+        - ELECTRIC_CAR
+        - ELECTRIC_BIKE
+    Waypoint:
+      type: object
+      properties:
+        hint:
+          type:
+            - string
+            - "null"
+          description:
+            "Unique internal identifier of the segment (ephemeral, not\
+            \ constant over data updates) This can be used on subsequent request to\
+            \ significantly speed up the query and to connect multiple services."
+        distance:
+          type:
+            - number
+            - "null"
+          format: double
+          description: The distance of the snapped point from the original
+        name:
+          type:
+            - string
+            - "null"
+          description: Name of the street the coordinate snapped to
+        location:
+          type:
+            - array
+            - "null"
+          items:
+            type: number
+            format: double
+          description:
+            "Array that contains the [longitude, latitude] pair of the\
+            \ snapped coordinate"
+paths:
+  /cube:
+    get:
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            maximum: 100
+            minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubePageDto"
+      summary: List
+      tags:
+        - Cube Controller
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCubeDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubeDto"
+        "400":
+          description: Bad Request
+      summary: Create
+      tags:
+        - Cube Controller
+  /cube/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubeDto"
+      summary: Get
+      tags:
+        - Cube Controller
+  /cube/{id}/progress:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubeProgressDto"
+      summary: Get Progress
+      tags:
+        - Cube Controller
+  /cube/{id}/response:
+    get:
+      parameters:
+        - description: Cube request id.
+          name: id
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Get cube response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubeResponseDto"
+      summary: Get Response
+      tags:
+        - Cube Controller
+  /cube/{id}/response/url:
+    get:
+      parameters:
+        - description: Cube request id.
+          name: id
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "302":
+          description: Redirect to cube response in Cloud Storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CubeResponseDto"
+      summary: Redirect To Response
+      tags:
+        - Cube Controller
+  /health:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: Health
+      tags:
+        - Health Controller
+  /route:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRouteDto"
+        required: true
+      responses:
+        "200":
+          description: Route created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteDto"
+        "400":
+          description: Bad request - Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests - Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              description: The maximum number of requests allowed per time window
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              description: The number of requests remaining in the current time window
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              description:
+                The time at which the current rate limit window resets
+                in UTC epoch seconds
+              schema:
+                type: integer
+            Retry-After:
+              description: The number of seconds to wait before making another request
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Bad gateway - External service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service unavailable - External service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Gateway timeout - Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      summary: Create
+      tags:
+        - Route Controller
+  /table:
+    get:
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            maximum: 100
+            minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TablePageDto"
+      summary: List
+      tags:
+        - Table Controller
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTableDto"
+        required: true
+      responses:
+        "201":
+          description: Table created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableDto"
+        "400":
+          description: Bad request - Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests - Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              description: The maximum number of requests allowed per time window
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              description: The number of requests remaining in the current time window
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              description:
+                The time at which the current rate limit window resets
+                in UTC epoch seconds
+              schema:
+                type: integer
+            Retry-After:
+              description: The number of seconds to wait before making another request
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      summary: Create
+      tags:
+        - Table Controller
+  /table/status:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableStatusDto"
+      summary: Get In Progress Status
+      tags:
+        - Table Controller
+  /table/sync:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTableDto"
+        required: true
+      responses:
+        "200":
+          description: Get table response directly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableResponseDto"
+        "400":
+          description: Bad request - Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests - Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              description: The maximum number of requests allowed per time window
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              description: The number of requests remaining in the current time window
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              description:
+                The time at which the current rate limit window resets
+                in UTC epoch seconds
+              schema:
+                type: integer
+            Retry-After:
+              description: The number of seconds to wait before making another request
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Bad gateway - External service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service unavailable - External service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Gateway timeout - Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      summary: Proxy
+      tags:
+        - Table Controller
+  /table/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableDto"
+      summary: Get
+      tags:
+        - Table Controller
+  /table/{id}/progress:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableProgressDto"
+      summary: Get Progress
+      tags:
+        - Table Controller
+  /table/{id}/request:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Get table request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableRequestDto"
+      summary: Get Request
+      tags:
+        - Table Controller
+  /table/{id}/response:
+    get:
+      parameters:
+        - description: Table request id.
+          name: id
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Get table response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableResponseDto"
+      summary: Get Response
+      tags:
+        - Table Controller
+  /table/{id}/response/url:
+    get:
+      parameters:
+        - description: Table request id.
+          name: id
+          required: true
+          in: path
+          schema:
+            type: integer
+            format: int64
+        - name: expiresInMinutes
+          in: query
+          schema:
+            type:
+              - integer
+              - "null"
+            format: int64
+      responses:
+        "302":
+          description: Redirect to table response in Cloud Storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableResponseDto"
+      summary: Redirect To Response
+      tags:
+        - Table Controller
+  /topics/table-response:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PubsubEvent"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      summary: Handle Table Response
+      tags:
+        - Pubsub Controller
+  /trip:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripDto"
+        required: true
+      responses:
+        "201":
+          description: Trip created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripDto"
+        "400":
+          description: Bad request - Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests - Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              description: The maximum number of requests allowed per time window
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              description: The number of requests remaining in the current time window
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              description:
+                The time at which the current rate limit window resets
+                in UTC epoch seconds
+              schema:
+                type: integer
+            Retry-After:
+              description: The number of seconds to wait before making another request
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Bad gateway - External service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service unavailable - External service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Gateway timeout - Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      summary: Create
+      tags:
+        - Trip Controller
