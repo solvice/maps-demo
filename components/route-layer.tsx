@@ -50,7 +50,7 @@ export function RouteLayer({ route, geometryFormat = 'polyline', highlightedRout
             map.removeSource(sourceId);
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     };
@@ -128,8 +128,8 @@ export function RouteLayer({ route, geometryFormat = 'polyline', highlightedRout
             }
           });
         });
-      } catch (error) {
-        console.error('Failed to add route layers:', error);
+      } catch (err) {
+        console.error('Failed to add route layers:', err);
       }
     }
 
@@ -149,7 +149,7 @@ export function RouteLayer({ route, geometryFormat = 'polyline', highlightedRout
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     };

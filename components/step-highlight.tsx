@@ -2,7 +2,7 @@
 
 import { useMapContext } from '@/contexts/map-context';
 import { useEffect } from 'react';
-import polyline from '@mapbox/polyline';
+import { decodePolyline } from '@/lib/polyline';
 
 interface StepHighlightProps {
   geometry: string | null;
@@ -33,10 +33,10 @@ export function StepHighlight({ geometry, stepIndex }: StepHighlightProps) {
 
     try {
       // Decode polyline geometry to coordinates
-      const coordinates = polyline.decode(geometry);
+      const coordinates = decodePolyline(geometry);
       
-      // Convert to GeoJSON format (swap lat/lng to lng/lat)
-      const geojsonCoordinates = coordinates.map(([lat, lng]) => [lng, lat]);
+      // Coordinates are already in [lng, lat] format from our decoder
+      const geojsonCoordinates = coordinates;
       
       console.log(`🎯 Highlighting step ${stepIndex} with ${coordinates.length} points`);
       

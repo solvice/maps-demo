@@ -73,7 +73,7 @@ export function RouteControlPanel({
   vehicleType,
   onVehicleTypeChange,
   routeConfig,
-  onRouteConfigChange,
+  onRouteConfigChange: _,
   route,
   loading,
   error,

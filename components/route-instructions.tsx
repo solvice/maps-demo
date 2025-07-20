@@ -5,15 +5,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowUp, 
-  ArrowDown, 
   ArrowLeft, 
   ArrowRight, 
   ArrowUpLeft,
   ArrowUpRight,
-  ArrowDownLeft,
-  ArrowDownRight,
   RotateCw,
-  RotateCcw,
   MapPin,
   Flag
 } from 'lucide-react';
