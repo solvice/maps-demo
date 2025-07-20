@@ -2,7 +2,7 @@
  * Decodes a polyline string into an array of [longitude, latitude] coordinates
  * Based on Google's polyline algorithm
  */
-export function decodePolyline(polyline: string): [number, number][] {
+export function decodePolyline(polyline: string, precision: number = 5): [number, number][] {
   if (!polyline || typeof polyline !== 'string' || polyline.length === 0) {
     return [];
   }
@@ -51,8 +51,9 @@ export function decodePolyline(polyline: string): [number, number][] {
 
       // Convert to degrees and add to coordinates array
       // Note: Return as [longitude, latitude] for GeoJSON format
-      const decodedLng = lng / 1e5;
-      const decodedLat = lat / 1e5;
+      const divisor = Math.pow(10, precision);
+      const decodedLng = lng / divisor;
+      const decodedLat = lat / divisor;
       
       // Validate coordinates are reasonable
       if (decodedLng < -180 || decodedLng > 180 || decodedLat < -90 || decodedLat > 90) {

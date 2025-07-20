@@ -32,7 +32,7 @@ export default function Home() {
     interpolate: false,
     generate_hints: false,
   });
-  const { route, error: routeError, loading: routeLoading, calculateRoute } = useRoute();
+  const { route, error: routeError, loading: routeLoading, calculationTime, calculateRoute } = useRoute();
   const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
 
   const handleMapClick = (coords: Coordinates) => {
@@ -100,11 +100,11 @@ export default function Home() {
 
   // Log route results
   useEffect(() => {
-    if (route && route.routes && route.routes[0] && route.routes[0].distance) {
+    if (route && route.routes && route.routes[0] && calculationTime !== null) {
       console.log('Route calculated:', route);
-      toast.success(`Route found! ${Math.round(route.routes[0].distance / 1000)}km`);
+      toast.success(`Route calculated in ${calculationTime}ms`);
     }
-  }, [route]);
+  }, [route, calculationTime]);
 
   // Handle route errors
   useEffect(() => {
@@ -238,6 +238,8 @@ export default function Home() {
         onDestinationSelect={handleDestinationSelect}
         vehicleType={routeConfig.vehicleType}
         onVehicleTypeChange={handleVehicleTypeChange}
+        routeConfig={routeConfig}
+        onRouteConfigChange={setRouteConfig}
         route={route}
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
@@ -266,7 +268,7 @@ export default function Home() {
             onDragEnd={handleMarkerDragEnd}
           />
         )}
-        <RouteLayer route={route} />
+        <RouteLayer route={route} geometryFormat={routeConfig.geometries} />
       </MapWithContextMenu>
     </main>
   );

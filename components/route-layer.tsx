@@ -7,6 +7,7 @@ import { decodePolyline } from '@/lib/polyline';
 
 interface RouteLayerProps {
   route: RouteResponse | null;
+  geometryFormat?: 'polyline' | 'geojson' | 'polyline6';
   style?: {
     color?: string;
     width?: number;
@@ -20,89 +21,129 @@ const DEFAULT_STYLE = {
   opacity: 0.8,
 };
 
-export function RouteLayer({ route, style = DEFAULT_STYLE }: RouteLayerProps) {
+const ROUTE_COLORS = [
+  '#3b82f6', // Blue for primary route
+  '#93c5fd', // Light blue for alternatives
+  '#93c5fd', // Light blue for alternatives
+  '#93c5fd'  // Light blue for alternatives
+];
+
+export function RouteLayer({ route, geometryFormat = 'polyline', style = DEFAULT_STYLE }: RouteLayerProps) {
   const map = useMapContext();
 
   useEffect(() => {
     if (!map) return;
 
-    const sourceId = 'route';
-    const layerId = 'route';
-
-    // Clean up existing route
+    // Clean up all existing routes
     const cleanup = () => {
       try {
-        if (map.getLayer && map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-        if (map.getSource && map.getSource(sourceId)) {
-          map.removeSource(sourceId);
+        // Clean up all possible route layers (up to 4)
+        for (let i = 0; i < 4; i++) {
+          const layerId = `route-${i}`;
+          const sourceId = `route-${i}`;
+          
+          if (map.getLayer && map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+          }
+          if (map.getSource && map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+          }
         }
       } catch (error) {
         // Ignore cleanup errors
       }
     };
 
-    // Remove existing route
+    // Remove existing routes
     cleanup();
 
-    // Add new route if provided
+    // Add new routes if provided
     if (route && route.routes && route.routes.length > 0) {
       try {
-        const geometry = route.routes[0].geometry;
-        if (!geometry) {
-          console.error('No geometry found in route response');
-          return;
-        }
-        const coordinates = decodePolyline(geometry);
-
-        // Add route source
-        map.addSource(sourceId, {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates
+        route.routes.forEach((routeData, index) => {
+          const geometry = routeData.geometry;
+          if (!geometry) {
+            console.error(`No geometry found in route ${index}`);
+            return;
+          }
+          
+          let coordinates: [number, number][];
+          
+          if (geometryFormat === 'geojson') {
+            // Handle GeoJSON geometry
+            try {
+              const geojson = JSON.parse(geometry);
+              coordinates = geojson.coordinates || [];
+            } catch {
+              console.error(`Failed to parse GeoJSON geometry for route ${index}`);
+              return;
             }
+          } else if (geometryFormat === 'polyline6') {
+            // Handle polyline6 with 6 decimal precision
+            coordinates = decodePolyline(geometry, 6);
+          } else {
+            // Handle standard polyline with 5 decimal precision
+            coordinates = decodePolyline(geometry, 5);
           }
-        });
+          const sourceId = `route-${index}`;
+          const layerId = `route-${index}`;
+          const routeColor = ROUTE_COLORS[index] || ROUTE_COLORS[0];
 
-        // Add route layer
-        map.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': style.color || DEFAULT_STYLE.color,
-            'line-width': style.width || DEFAULT_STYLE.width,
-            'line-opacity': style.opacity || DEFAULT_STYLE.opacity
-          }
+          // Add route source
+          map.addSource(sourceId, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: { routeIndex: index },
+              geometry: {
+                type: 'LineString',
+                coordinates
+              }
+            }
+          });
+
+          // Add route layer
+          map.addLayer({
+            id: layerId,
+            type: 'line',
+            source: sourceId,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': routeColor,
+              'line-width': index === 0 ? (style.width || DEFAULT_STYLE.width) : 3, // Primary route slightly thicker
+              'line-opacity': style.opacity || DEFAULT_STYLE.opacity
+            }
+          });
         });
       } catch (error) {
-        console.error('Failed to add route layer:', error);
+        console.error('Failed to add route layers:', error);
       }
     }
 
     // Cleanup function for unmount
     return () => {
       try {
-        if (map && map.getLayer && map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-        if (map && map.getSource && map.getSource(sourceId)) {
-          map.removeSource(sourceId);
+        if (map) {
+          for (let i = 0; i < 4; i++) {
+            const layerId = `route-${i}`;
+            const sourceId = `route-${i}`;
+            
+            if (map.getLayer && map.getLayer(layerId)) {
+              map.removeLayer(layerId);
+            }
+            if (map.getSource && map.getSource(sourceId)) {
+              map.removeSource(sourceId);
+            }
+          }
         }
       } catch (error) {
         // Ignore cleanup errors
       }
     };
-  }, [map, route, style.color, style.width, style.opacity]);
+  }, [map, route, geometryFormat, style.color, style.width, style.opacity]);
 
   return null; // This component doesn't render anything directly
 }

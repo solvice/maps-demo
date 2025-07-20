@@ -6,6 +6,7 @@ interface UseRouteState {
   route: RouteResponse | null;
   loading: boolean;
   error: string | null;
+  calculationTime: number | null;
 }
 
 export function useRoute() {
@@ -13,6 +14,7 @@ export function useRoute() {
     route: null,
     loading: false,
     error: null,
+    calculationTime: null,
   });
 
   // Ref to track the current request timestamp for cancellation
@@ -39,6 +41,7 @@ export function useRoute() {
         route: null,
         error: null,
         loading: false,
+        calculationTime: null,
       }));
       return;
     }
@@ -62,7 +65,10 @@ export function useRoute() {
       }));
 
       try {
+        const startTime = performance.now();
         const routeData = await apiCalculateRoute(origin, destination, options);
+        const endTime = performance.now();
+        const calculationTime = Math.round(endTime - startTime);
         
         // Only update state if this is still the current request
         if (currentRequestRef.current === requestId) {
@@ -71,6 +77,7 @@ export function useRoute() {
             route: routeData,
             loading: false,
             error: null,
+            calculationTime,
           }));
         }
       } catch (error) {
@@ -81,6 +88,7 @@ export function useRoute() {
             route: null,
             loading: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred',
+            calculationTime: null,
           }));
         }
       }
@@ -98,6 +106,7 @@ export function useRoute() {
       route: null,
       loading: false,
       error: null,
+      calculationTime: null,
     });
   }, []);
 
@@ -114,6 +123,7 @@ export function useRoute() {
     route: state.route,
     loading: state.loading,
     error: state.error,
+    calculationTime: state.calculationTime,
     calculateRoute,
     clearRoute,
   };
