@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 interface MapProps {
   center?: [number, number]; // [longitude, latitude]
   zoom?: number;
+  style?: string;
   onLoad?: (map: maplibregl.Map) => void;
   onError?: (error: Error) => void;
   onClick?: (coordinates: [number, number]) => void;
@@ -27,6 +28,7 @@ interface ContextMenuState {
 export function MapWithContextMenu({ 
   center = [3.7174, 51.0543], // Ghent fallback
   zoom = 12, 
+  style: mapStyleUrl = 'https://cdn.solvice.io/styles/white.json',
   onLoad,
   onError,
   onClick,
@@ -51,7 +53,7 @@ export function MapWithContextMenu({
     try {
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: 'https://cdn.solvice.io/styles/white.json',
+        style: mapStyleUrl,
         center: center,
         zoom: zoom,
         attributionControl: false,
@@ -142,6 +144,13 @@ export function MapWithContextMenu({
     }
   }, [center, isLoaded]);
 
+  // Update style when it changes
+  useEffect(() => {
+    if (map.current && isLoaded) {
+      map.current.setStyle(mapStyleUrl);
+    }
+  }, [mapStyleUrl, isLoaded]);
+
   // Hide context menu when clicking elsewhere
   useEffect(() => {
     const handleClickOutside = () => {
@@ -200,25 +209,27 @@ export function MapWithContextMenu({
           >
             <div
               className={cn(
-                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
                 "transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                 "hover:bg-accent hover:text-accent-foreground"
               )}
               onClick={handleFromHere}
               data-testid="context-from-here"
             >
-              📍 Set as origin (from here)
+              <div className="w-3 h-3 bg-green-500 rounded-full" />
+              Origin
             </div>
             <div
               className={cn(
-                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
                 "transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                 "hover:bg-accent hover:text-accent-foreground"
               )}
               onClick={handleToHere}
               data-testid="context-to-here"
             >
-              🎯 Set as destination (to here)
+              <div className="w-3 h-3 bg-red-500 rounded-full" />
+              Destination
             </div>
             <div className="h-px my-1 -mx-1 bg-border"></div>
             <div className="px-2 py-1.5 text-xs text-muted-foreground">

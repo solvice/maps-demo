@@ -3,9 +3,13 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Clock, MapPin, Car, Bike, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, Clock, MapPin, Car, Bike, Truck, Code } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
 import { RouteResponse } from '@/lib/solvice-api';
+import { RouteInstructions } from '@/components/route-instructions';
+import { toast } from 'sonner';
 
 type Coordinates = [number, number];
 
@@ -50,6 +54,13 @@ interface RouteControlPanelProps {
   
   // Route highlighting
   onRouteHover?: (routeIndex: number | null) => void;
+  
+  // Instructions
+  showInstructions?: boolean;
+  
+  // Debug
+  originCoordinates?: [number, number] | null;
+  destinationCoordinates?: [number, number] | null;
 }
 
 export function RouteControlPanel({
@@ -66,7 +77,10 @@ export function RouteControlPanel({
   route,
   loading,
   error,
-  onRouteHover
+  onRouteHover,
+  showInstructions = false,
+  originCoordinates: originCoords,
+  destinationCoordinates: destinationCoords
 }: RouteControlPanelProps) {
 
 
@@ -100,12 +114,36 @@ export function RouteControlPanel({
     '#93c5fd'  // Light blue for alternatives
   ];
 
+  // Copy request JSON for debugging
+  const copyRequestJson = async () => {
+    if (!originCoords || !destinationCoords) {
+      toast.error('Need both origin and destination to generate request');
+      return;
+    }
+
+    const requestJson = {
+      coordinates: [originCoords, destinationCoords],
+      ...routeConfig
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(requestJson, null, 2));
+      toast.success('Request JSON copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   return (
-    <Card className="absolute top-4 left-4 w-72 z-10 shadow-lg" data-testid="route-control-panel">
-      <CardContent className="p-3 space-y-3">
+    <TooltipProvider>
+      <Card className="absolute top-4 left-4 w-72 z-10 shadow-lg" data-testid="route-control-panel">
+        <CardContent className="p-3 space-y-3">
         {/* Header with Solvice Maps Logo */}
-        <div className="text-center pb-1 border-b">
-          <h1 className="text-base font-bold text-primary">Solvice Maps</h1>
+        <div className="text-center pb-2">
+          <h1 className="text-xl font-extrabold text-black tracking-wide">
+            Solvice Maps
+          </h1>
         </div>
         {/* Vehicle Type Toggle Group */}
         <div className="flex justify-center">
@@ -210,7 +248,40 @@ export function RouteControlPanel({
             Click on the map to place markers or enter addresses above
           </div>
         )}
-      </CardContent>
-    </Card>
+        
+        {/* Turn-by-turn instructions that roll out */}
+        {showInstructions && routeConfig.steps && (
+          <div className="mt-3 pt-3 border-t animate-in slide-in-from-top-2 duration-300">
+            <div className="max-h-80 overflow-hidden">
+              <RouteInstructions
+                route={route}
+                selectedRouteIndex={0}
+                embedded={true}
+              />
+            </div>
+          </div>
+        )}
+        
+          {/* Debug: Copy request JSON */}
+          <div className="flex justify-end pt-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200"
+                  onClick={copyRequestJson}
+                >
+                  <Code className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copy request JSON to clipboard</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }

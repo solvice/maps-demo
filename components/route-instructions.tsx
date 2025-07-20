@@ -24,6 +24,7 @@ interface RouteInstructionsProps {
   route: RouteResponse | null;
   selectedRouteIndex?: number;
   onClose?: () => void;
+  embedded?: boolean;
 }
 
 // Mapping of maneuver types to icons
@@ -111,7 +112,7 @@ const getInstructionText = (step: RouteStep): string => {
   }
 };
 
-export function RouteInstructions({ route, selectedRouteIndex = 0, onClose }: RouteInstructionsProps) {
+export function RouteInstructions({ route, selectedRouteIndex = 0, onClose, embedded = false }: RouteInstructionsProps) {
   if (!route || !route.routes || route.routes.length === 0) {
     return null;
   }
@@ -133,8 +134,47 @@ export function RouteInstructions({ route, selectedRouteIndex = 0, onClose }: Ro
     return null;
   }
 
+  if (embedded) {
+    return (
+      <div data-testid="route-instructions-embedded">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+          <span className="font-medium text-foreground">Turn-by-Turn Directions</span>
+          <Badge variant="secondary" className="text-xs">
+            {allSteps.length} steps
+          </Badge>
+          <span>•</span>
+          <span>{formatDistance(selectedRoute.distance)}</span>
+        </div>
+        <ScrollArea className="h-72">
+          <div className="space-y-1">
+            {allSteps.map((step, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors overflow-hidden"
+              >
+                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-background border rounded-full">
+                  {getManeuverIcon(step.maneuver.type, step.maneuver.modifier)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium leading-tight break-words">
+                    {getInstructionText(step)}
+                  </p>
+                  {step.distance > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1 break-words">
+                      {formatDistance(step.distance)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
   return (
-    <Card className="absolute top-4 right-4 w-80 h-96 z-10 shadow-lg" data-testid="route-instructions">
+    <Card className="absolute top-80 left-4 w-72 h-96 z-10 shadow-lg animate-in slide-in-from-top-2 duration-300" data-testid="route-instructions">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Turn-by-Turn Directions</CardTitle>

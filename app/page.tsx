@@ -4,8 +4,9 @@ import { MapWithContextMenu } from '@/components/map-with-context-menu';
 import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
 import { RouteControlPanel } from '@/components/route-control-panel';
-import { RouteInstructions } from '@/components/route-instructions';
 import { MapControls } from '@/components/map-controls';
+import { SpeedProfile } from '@/components/elevation-profile';
+import { StepHighlight } from '@/components/step-highlight';
 import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
@@ -24,11 +25,13 @@ export default function Home() {
   const isDraggingRef = useRef(false);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [mapStyle, setMapStyle] = useState('https://maps.solvice.io/tiles/styles/light.json');
+  const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/white.json');
+  const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
+  const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 1,
     steps: false,
-    annotations: [],
+    annotations: ['distance', 'duration'],
     geometries: 'polyline',
     overview: 'full',
     continue_straight: true,
@@ -118,6 +121,11 @@ export default function Home() {
   useEffect(() => {
     if (route && route.routes && route.routes[0] && calculationTime !== null) {
       console.log('Route calculated:', route);
+      console.log('Route legs structure:', route.routes[0].legs);
+      if (route.routes[0].legs && route.routes[0].legs[0] && route.routes[0].legs[0].steps) {
+        console.log('First leg steps:', route.routes[0].legs[0].steps);
+        console.log('First step structure:', route.routes[0].legs[0].steps[0]);
+      }
       toast.success(`Route calculated in ${calculationTime}ms`);
     }
   }, [route, calculationTime]);
@@ -248,11 +256,27 @@ export default function Home() {
 
   // Handle route config change
   const handleRouteConfigChange = (newConfig: RouteConfig) => {
-    setRouteConfig(newConfig);
-    // Show instructions when steps are enabled
-    if (newConfig.steps && !showInstructions) {
+    // Always set departureTime to current time when any config changes
+    const configWithTime = {
+      ...newConfig,
+      departureTime: new Date().toISOString()
+    };
+    
+    setRouteConfig(configWithTime);
+    
+    // Show/hide instructions based on steps setting
+    if (configWithTime.steps) {
       setShowInstructions(true);
+    } else {
+      setShowInstructions(false);
     }
+  };
+
+  // Handle step hover from speed profile
+  const handleStepHover = (stepGeometry: string | null, stepIndex: number | null) => {
+    setHighlightedStepGeometry(stepGeometry);
+    setHighlightedStepIndex(stepIndex);
+    console.log(`🎯 Hovering step ${stepIndex} with geometry:`, stepGeometry ? 'available' : 'none');
   };
 
   return (
@@ -272,20 +296,16 @@ export default function Home() {
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
         onRouteHover={setHoveredRouteIndex}
+        showInstructions={showInstructions}
+        originCoordinates={origin}
+        destinationCoordinates={destination}
       />
       <MapControls 
         routeConfig={routeConfig}
-        onRouteConfigChange={setRouteConfig}
+        onRouteConfigChange={handleRouteConfigChange}
         mapStyle={mapStyle}
         onMapStyleChange={setMapStyle}
       />
-      {showInstructions && routeConfig.steps && (
-        <RouteInstructions
-          route={route}
-          selectedRouteIndex={hoveredRouteIndex || 0}
-          onClose={() => setShowInstructions(false)}
-        />
-      )}
       <MapWithContextMenu 
         center={[3.7174, 51.0543]}
         style={mapStyle}
@@ -316,7 +336,17 @@ export default function Home() {
           geometryFormat={routeConfig.geometries} 
           highlightedRoute={hoveredRouteIndex}
         />
+        <StepHighlight 
+          geometry={highlightedStepGeometry}
+          stepIndex={highlightedStepIndex}
+        />
       </MapWithContextMenu>
+      <SpeedProfile 
+        route={route}
+        selectedRouteIndex={hoveredRouteIndex || 0}
+        show={routeConfig.steps}
+        onStepHover={handleStepHover}
+      />
     </main>
   );
 }

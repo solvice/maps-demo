@@ -56,7 +56,7 @@ export interface RouteLeg {
 export interface Route {
   distance: number;
   duration: number;
-  geometry?: any;
+  geometry?: string;
   weight: number;
   weight_name: string;
   legs: RouteLeg[];
@@ -118,7 +118,6 @@ export async function calculateRoute(
       },
       body: JSON.stringify({
         coordinates: [origin, destination],
-        overview: 'full',
         ...options
       })
     });
