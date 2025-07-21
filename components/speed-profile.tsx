@@ -280,7 +280,7 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   const bottomClass = showInstructions ? "bottom-4 left-80 right-4" : "bottom-4 left-4 right-4";
 
   return (
-    <Card className={`absolute ${bottomClass} h-48 z-10 shadow-lg animate-in slide-in-from-bottom-2 duration-300`} data-testid="speed-profile">
+    <Card className={`absolute ${bottomClass} h-64 z-10 shadow-lg animate-in slide-in-from-bottom-2 duration-300`} data-testid="speed-profile">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Speed Profile</CardTitle>
@@ -299,7 +299,7 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
         </div>
       </CardHeader>
       <CardContent className="p-2">
-        <ChartContainer config={chartConfig} className="h-24 w-full">
+        <ChartContainer config={chartConfig} className="h-36 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart 
               data={combinedData} 
