@@ -165,7 +165,6 @@ function HomeContent() {
       } else if (newCount === 2) {
         console.log('Second click - setting destination');
         handleSetDestination(coords);
-        toast.success('Destination placed!');
         return 2;
       } else {
         console.log('Third+ click - moving origin');
@@ -188,7 +187,6 @@ function HomeContent() {
         setOriginText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
       }
     });
-    toast.success('Origin moved to selected location');
   };
 
   const handleSetDestination = (coords: Coordinates) => {
@@ -201,7 +199,6 @@ function HomeContent() {
         setDestinationText(`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
       }
     });
-    toast.success('Destination moved to selected location');
   };
 
   // Auto-calculate route when both markers are placed or config changes
@@ -291,7 +288,6 @@ function HomeContent() {
           setOriginText(address);
         }
       });
-      toast.success('Origin moved to new location');
     } else {
       setDestination(coords);
       // Start reverse geocoding for better address
@@ -300,7 +296,6 @@ function HomeContent() {
           setDestinationText(address);
         }
       });
-      toast.success('Destination moved to new location');
     }
   };
 

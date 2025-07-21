@@ -116,7 +116,6 @@ test.describe('Complete User Journey - Maps Demo', () => {
     
     // Verify second marker appears
     await expect(page.locator('.marker-destination')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/Destination placed/i).first()).toBeVisible({ timeout: 3000 });
     
     // Verify route calculation starts
     await expect(page.getByText(/Calculating route/i).first()).toBeVisible({ timeout: 3000 });

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Clock, MapPin, Car, Bike, Truck, Code, HelpCircle } from 'lucide-react';
+import { Loader2, Clock, MapPin, Car, Bike, Truck, Code, HelpCircle, Share } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
 import { RouteResponse } from '@/lib/solvice-api';
 import { RouteInstructions } from '@/components/route-instructions';
@@ -169,6 +169,46 @@ export function RouteControlPanel({
     try {
       await navigator.clipboard.writeText(JSON.stringify(requestJson, null, 2));
       toast.success('Request JSON copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  // Generate shareable URL
+  const getShareUrl = () => {
+    if (!originCoords || !destinationCoords) {
+      return null;
+    }
+    
+    const url = new URL(window.location.origin);
+    url.searchParams.set('origin', `${originCoords[0]},${originCoords[1]}`);
+    url.searchParams.set('destination', `${destinationCoords[0]},${destinationCoords[1]}`);
+    
+    if (routeConfig.vehicleType && routeConfig.vehicleType !== 'CAR') {
+      url.searchParams.set('vehicle', routeConfig.vehicleType);
+    }
+    if (routeConfig.routingEngine && routeConfig.routingEngine !== 'OSM') {
+      url.searchParams.set('engine', routeConfig.routingEngine);
+    }
+    if (routeConfig.steps) {
+      url.searchParams.set('steps', 'true');
+    }
+    
+    return url.toString();
+  };
+
+  // Copy share URL
+  const copyShareUrl = async () => {
+    const shareUrl = getShareUrl();
+    if (!shareUrl) {
+      toast.error('Need both origin and destination to generate share URL');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share URL copied to clipboard');
     } catch (err) {
       console.error('Failed to copy:', err);
       toast.error('Failed to copy to clipboard');
@@ -461,7 +501,7 @@ export function RouteControlPanel({
 
 
 
-        {/* Instructions and Debug JSON button on same line */}
+        {/* Instructions and Action buttons */}
         <div className="flex justify-between items-center pt-1">
           {!hasRoute && !loading && !error && (
             <div className="text-xs text-muted-foreground flex-1">
@@ -469,45 +509,89 @@ export function RouteControlPanel({
             </div>
           )}
           
-          {/* Debug: Copy request JSON with formatted preview */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200 ml-2"
-                      onClick={copyRequestJson}
-                    >
-                      <Code className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" align="end">
-                    <p>View/Copy request JSON</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-3" side="left" align="end">
-              <div className="space-y-2">
-                <h4 className="font-medium text-sm">Request JSON</h4>
-                {getRequestJson() ? (
-                  <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-64 font-mono">
-                    {JSON.stringify(getRequestJson(), null, 2)}
-                  </pre>
-                ) : (
+          <div className="flex items-center gap-1 ml-2">
+            {/* Share URL button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200"
+                        onClick={copyShareUrl}
+                      >
+                        <Share className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" align="end">
+                      <p>Share route URL</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3" side="left" align="end">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Share Route</h4>
+                  {getShareUrl() ? (
+                    <div className="space-y-2">
+                      <div className="text-xs bg-muted p-2 rounded overflow-auto max-h-32 font-mono break-all">
+                        {getShareUrl()}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Click the share button to copy this URL to clipboard. Anyone with this link can view your route with the same settings.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Set both origin and destination to generate a shareable URL
+                    </p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {/* Debug: Copy request JSON with formatted preview */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200"
+                        onClick={copyRequestJson}
+                      >
+                        <Code className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" align="end">
+                      <p>View/Copy request JSON</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3" side="left" align="end">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Request JSON</h4>
+                  {getRequestJson() ? (
+                    <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-64 font-mono">
+                      {JSON.stringify(getRequestJson(), null, 2)}
+                    </pre>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Set both origin and destination to see request JSON
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Set both origin and destination to see request JSON
+                    Click the button to copy to clipboard
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Click the button to copy to clipboard
-                </p>
-              </div>
-            </PopoverContent>
-          </Popover>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         
         {/* Turn-by-turn instructions that roll out */}
