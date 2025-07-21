@@ -161,20 +161,41 @@ function HomeContent() {
 
       // Effect 1: Both origin and destination → flyTo bounding box
       if (origin && destination) {
-        const minLng = Math.min(origin[0], destination[0]);
-        const maxLng = Math.max(origin[0], destination[0]);
-        const minLat = Math.min(origin[1], destination[1]);
-        const maxLat = Math.max(origin[1], destination[1]);
+        const bounds: [[number, number], [number, number]] = [
+          [Math.min(origin[0], destination[0]), Math.min(origin[1], destination[1])],
+          [Math.max(origin[0], destination[0]), Math.max(origin[1], destination[1])]
+        ];
         
-        const padding = 0.01; // ~1km padding
-        const centerLng = (minLng + maxLng) / 2;
-        const centerLat = (minLat + maxLat) / 2;
+        // Calculate center
+        const centerLng = (bounds[0][0] + bounds[1][0]) / 2;
+        const centerLat = (bounds[0][1] + bounds[1][1]) / 2;
         
-        const latDiff = maxLat - minLat + (padding * 2);
-        const lngDiff = maxLng - minLng + (padding * 2);
-        const latZoom = Math.log2(360 / latDiff);
-        const lngZoom = Math.log2(360 / lngDiff);
-        const zoom = Math.max(10, Math.min(15, Math.min(latZoom, lngZoom) - 1));
+        // Improved zoom calculation that accounts for route length
+        const latDiff = bounds[1][1] - bounds[0][1];
+        const lngDiff = bounds[1][0] - bounds[0][0];
+        
+        // Calculate distance between points (rough approximation in km)
+        const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // 111 km per degree
+        
+        // Adaptive padding based on distance
+        let paddingFactor;
+        if (distance < 1) paddingFactor = 0.5;      // Very close points: 50% padding
+        else if (distance < 10) paddingFactor = 0.3;  // Close points: 30% padding  
+        else if (distance < 50) paddingFactor = 0.2;  // Medium distance: 20% padding
+        else paddingFactor = 0.15;                    // Long distance: 15% padding
+        
+        const paddedLatDiff = latDiff * (1 + paddingFactor * 2);
+        const paddedLngDiff = lngDiff * (1 + paddingFactor * 2);
+        
+        // Calculate zoom based on viewport coverage
+        const latZoom = Math.log2(180 / Math.max(paddedLatDiff, 0.001));
+        const lngZoom = Math.log2(360 / Math.max(paddedLngDiff, 0.001));
+        
+        // Use the smaller zoom to ensure both points are visible, with better limits
+        const calculatedZoom = Math.min(latZoom, lngZoom) - 0.5; // Less aggressive padding reduction
+        const zoom = Math.max(8, Math.min(16, calculatedZoom));
+        
+        console.log('Zoom calculation:', { distance: distance.toFixed(2) + 'km', paddingFactor, calculatedZoom: calculatedZoom.toFixed(2), finalZoom: zoom });
         
         doFlyTo([centerLng, centerLat], zoom, 'both coordinates');
       }
