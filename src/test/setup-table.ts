@@ -50,9 +50,10 @@ Object.defineProperty(window, 'open', {
 });
 
 // Mock performance API for calculation timing
+const mockPerformanceNow = vi.fn(() => Date.now());
 Object.defineProperty(window, 'performance', {
   value: {
-    now: vi.fn(() => Date.now()),
+    now: mockPerformanceNow,
     memory: {
       usedJSHeapSize: 1000000,
       totalJSHeapSize: 2000000,

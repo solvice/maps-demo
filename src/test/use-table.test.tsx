@@ -22,8 +22,8 @@ describe('useTable Hook', () => {
     // Reset fetch mock
     (global.fetch as any).mockClear();
     
-    // Reset performance mock (will be updated in setup-table.ts)
-    vi.mocked(window.performance.now).mockReturnValue(1000);
+    // Reset performance mock
+    (window.performance.now as any).mockReturnValue(1000);
   });
 
   afterEach(() => {
@@ -316,7 +316,7 @@ describe('useTable Hook', () => {
       const startTime = 1000;
       const endTime = 1500;
       
-      vi.mocked(window.performance.now)
+      (window.performance.now as any)
         .mockReturnValueOnce(startTime)
         .mockReturnValueOnce(endTime);
       

@@ -14,7 +14,6 @@ export function TrafficImpactLegend({
 
   // Generate gradient stops for the legend using dynamic max impact
   const gradientStops = [];
-  const impactRange = Math.max(maxTrafficImpact - 1.0, 0.01); // Avoid division by zero
   
   for (let i = 0; i <= 10; i++) {
     const t = i / 10; // 0 to 1

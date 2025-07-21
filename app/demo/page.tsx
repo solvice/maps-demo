@@ -38,7 +38,7 @@ function UnifiedDemoContent() {
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
-  const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
+  const [hoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
   const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
@@ -307,7 +307,7 @@ function UnifiedDemoContent() {
     });
   };
 
-  const handleMarkerDragStart = (type: 'origin' | 'destination') => {
+  const handleMarkerDragStart = () => {
     setIsDragging(true);
     isDraggingRef.current = true;
   };
@@ -400,10 +400,6 @@ function UnifiedDemoContent() {
     setRouteConfig(configWithTime);
   };
 
-  const handleStepHover = (stepGeometry: string | null, stepIndex: number | null) => {
-    setHighlightedStepGeometry(stepGeometry);
-    setHighlightedStepIndex(stepIndex);
-  };
 
   // Navigation component
   const DemoNavigation = () => (

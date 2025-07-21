@@ -91,7 +91,11 @@ function validateRequest(body: unknown): boolean {
     return false;
   }
   
-  const { type, query, coordinates } = body;
+  const { type, query, coordinates } = body as { 
+    type?: string; 
+    query?: string; 
+    coordinates?: [number, number]; 
+  };
   
   // Validate type
   if (!type || !['forward', 'reverse', 'autocomplete'].includes(type)) {
@@ -194,7 +198,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { type, query, coordinates } = body;
+    const { type, query, coordinates } = body as { 
+      type: string; 
+      query?: string; 
+      coordinates?: [number, number]; 
+    };
     const apiKey = getApiKey();
 
     switch (type) {
