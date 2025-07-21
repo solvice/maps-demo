@@ -1,12 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { calculateRoute as apiCalculateRoute, RouteResponse, CreateRouteOptions } from '@/lib/solvice-api';
 import { Coordinates } from '@/lib/coordinates';
+import { createTrafficRouteConfig } from '@/lib/route-utils';
 
 interface UseRouteState {
   route: RouteResponse | null;
   loading: boolean;
   error: string | null;
   calculationTime: number | null;
+  trafficRoute: RouteResponse | null;
+  trafficLoading: boolean;
+  trafficError: string | null;
+  trafficCalculationTime: number | null;
 }
 
 export function useRoute() {
@@ -16,6 +21,10 @@ export function useRoute() {
     loading: false,
     error: null,
     calculationTime: null,
+    trafficRoute: null,
+    trafficLoading: false,
+    trafficError: null,
+    trafficCalculationTime: null,
   });
 
   // Ref to track the current request timestamp for cancellation
@@ -27,7 +36,8 @@ export function useRoute() {
     origin: Coordinates | null,
     destination: Coordinates | null,
     options?: CreateRouteOptions,
-    debounceMs: number = 300
+    debounceMs: number = 300,
+    compareTraffic?: boolean
   ) => {
     // Clear route if either coordinate is missing
     if (!origin || !destination) {
@@ -43,6 +53,10 @@ export function useRoute() {
         error: null,
         loading: false,
         calculationTime: null,
+        trafficRoute: null,
+        trafficError: null,
+        trafficLoading: false,
+        trafficCalculationTime: null,
       }));
       return;
     }
@@ -52,48 +66,141 @@ export function useRoute() {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Set up debounced execution
-    debounceTimeoutRef.current = setTimeout(async () => {
+    // Execute immediately if no debounce, otherwise set up debounced execution
+    const executeRouteCalculation = async () => {
       // Generate unique request ID
       const requestId = Date.now();
       currentRequestRef.current = requestId;
 
-      // Set loading state and clear previous error
+      // Set loading states and clear previous errors
       setState(prev => ({
         ...prev,
         loading: true,
         error: null,
+        trafficLoading: compareTraffic || false,
+        trafficError: null,
       }));
 
-      try {
-        const startTime = performance.now();
-        const routeData = await apiCalculateRoute(origin, destination, options);
-        const endTime = performance.now();
-        const calculationTime = Math.round(endTime - startTime);
-        
-        // Only update state if this is still the current request
-        if (currentRequestRef.current === requestId) {
-          setState(prev => ({
-            ...prev,
-            route: routeData,
-            loading: false,
-            error: null,
-            calculationTime,
-          }));
-        }
-      } catch (error) {
-        // Only update state if this is still the current request
-        if (currentRequestRef.current === requestId) {
-          setState(prev => ({
-            ...prev,
-            route: null,
-            loading: false,
-            error: error instanceof Error ? error.message : 'Unknown error occurred',
-            calculationTime: null,
-          }));
+      // Execute requests
+      if (compareTraffic) {
+        // Dual requests: regular + traffic
+        const promises = [
+          // Regular route request
+          (async () => {
+            try {
+              const startTime = performance.now();
+              const routeData = await apiCalculateRoute(origin, destination, options);
+              const endTime = performance.now();
+              const calculationTime = Math.round(endTime - startTime);
+              
+              // Only update state if this is still the current request
+              if (currentRequestRef.current === requestId) {
+                setState(prev => ({
+                  ...prev,
+                  route: routeData,
+                  loading: false,
+                  error: null,
+                  calculationTime,
+                }));
+              }
+            } catch (error) {
+              // Only update state if this is still the current request
+              if (currentRequestRef.current === requestId) {
+                setState(prev => ({
+                  ...prev,
+                  route: null,
+                  loading: false,
+                  error: error instanceof Error ? error.message : 'Unknown error occurred',
+                  calculationTime: null,
+                }));
+              }
+            }
+          })(),
+          
+          // Traffic route request
+          (async () => {
+            try {
+              const trafficConfig = createTrafficRouteConfig(options);
+              const startTime = performance.now();
+              const trafficData = await apiCalculateRoute(origin, destination, trafficConfig);
+              const endTime = performance.now();
+              const trafficCalculationTime = Math.round(endTime - startTime);
+              
+              // Only update state if this is still the current request
+              if (currentRequestRef.current === requestId) {
+                setState(prev => ({
+                  ...prev,
+                  trafficRoute: trafficData,
+                  trafficLoading: false,
+                  trafficError: null,
+                  trafficCalculationTime,
+                }));
+              }
+            } catch (error) {
+              // Only update state if this is still the current request
+              if (currentRequestRef.current === requestId) {
+                setState(prev => ({
+                  ...prev,
+                  trafficRoute: null,
+                  trafficLoading: false,
+                  trafficError: error instanceof Error ? error.message : 'Unknown error occurred',
+                  trafficCalculationTime: null,
+                }));
+              }
+            }
+          })()
+        ];
+
+        // Execute both requests concurrently
+        await Promise.allSettled(promises);
+      } else {
+        // Single request: regular route only
+        try {
+          const startTime = performance.now();
+          const routeData = await apiCalculateRoute(origin, destination, options);
+          const endTime = performance.now();
+          const calculationTime = Math.round(endTime - startTime);
+          
+          // Only update state if this is still the current request
+          if (currentRequestRef.current === requestId) {
+            setState(prev => ({
+              ...prev,
+              route: routeData,
+              loading: false,
+              error: null,
+              calculationTime,
+              // Clear any previous traffic data
+              trafficRoute: null,
+              trafficError: null,
+              trafficCalculationTime: null,
+            }));
+          }
+        } catch (error) {
+          // Only update state if this is still the current request
+          if (currentRequestRef.current === requestId) {
+            setState(prev => ({
+              ...prev,
+              route: null,
+              loading: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+              calculationTime: null,
+              // Clear any previous traffic data
+              trafficRoute: null,
+              trafficError: null,
+              trafficCalculationTime: null,
+            }));
+          }
         }
       }
-    }, debounceMs);
+    };
+
+    if (debounceMs === 0) {
+      // Execute immediately for tests
+      executeRouteCalculation();
+    } else {
+      // Set up debounced execution
+      debounceTimeoutRef.current = setTimeout(executeRouteCalculation, debounceMs);
+    }
   }, []);
 
   const clearRoute = useCallback(() => {
@@ -108,6 +215,10 @@ export function useRoute() {
       loading: false,
       error: null,
       calculationTime: null,
+      trafficRoute: null,
+      trafficLoading: false,
+      trafficError: null,
+      trafficCalculationTime: null,
     });
   }, []);
 
@@ -125,6 +236,10 @@ export function useRoute() {
     loading: state.loading,
     error: state.error,
     calculationTime: state.calculationTime,
+    trafficRoute: state.trafficRoute,
+    trafficLoading: state.trafficLoading,
+    trafficError: state.trafficError,
+    trafficCalculationTime: state.trafficCalculationTime,
     calculateRoute,
     clearRoute,
   };

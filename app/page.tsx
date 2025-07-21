@@ -1,5 +1,6 @@
 'use client';
 
+import { Analytics } from "@vercel/analytics/next";
 import { MapWithContextMenu } from '@/components/map-with-context-menu';
 import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
@@ -12,11 +13,16 @@ import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
 import { useAutoZoom } from '@/hooks/use-auto-zoom';
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { shouldEnableTrafficComparison } from '@/lib/route-utils';
 
 type Coordinates = [number, number];
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [origin, setOrigin] = useState<Coordinates | null>(null);
   const [destination, setDestination] = useState<Coordinates | null>(null);
   const [originText, setOriginText] = useState<string>('');
@@ -42,8 +48,104 @@ export default function Home() {
     interpolate: false,
     generate_hints: false,
   });
-  const { route, error: routeError, loading: routeLoading, calculationTime, calculateRoute } = useRoute();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { 
+    route, 
+    error: routeError, 
+    loading: routeLoading, 
+    calculationTime, 
+    trafficRoute, 
+    trafficError, 
+    trafficLoading, 
+    calculateRoute 
+  } = useRoute();
   const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
+  
+  // Parse URL parameters on initial load
+  useEffect(() => {
+    if (isInitialized) return;
+    
+    const originParam = searchParams.get('origin');
+    const destParam = searchParams.get('destination');
+    const vehicleParam = searchParams.get('vehicle');
+    const engineParam = searchParams.get('engine');
+    const stepsParam = searchParams.get('steps');
+    
+    if (originParam) {
+      try {
+        const parts = originParam.split(',');
+        if (parts.length === 2) {
+          const coords: Coordinates = [parseFloat(parts[0]), parseFloat(parts[1])];
+          if (!isNaN(coords[0]) && !isNaN(coords[1])) {
+            setOrigin(coords);
+            getAddressFromCoordinates(coords).then(address => {
+              setOriginText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Invalid origin parameter:', e);
+      }
+    }
+    
+    if (destParam) {
+      try {
+        const parts = destParam.split(',');
+        if (parts.length === 2) {
+          const coords: Coordinates = [parseFloat(parts[0]), parseFloat(parts[1])];
+          if (!isNaN(coords[0]) && !isNaN(coords[1])) {
+            setDestination(coords);
+            getAddressFromCoordinates(coords).then(address => {
+              setDestinationText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Invalid destination parameter:', e);
+      }
+    }
+    
+    if (vehicleParam || engineParam || stepsParam) {
+      setRouteConfig(prev => ({
+        ...prev,
+        ...(vehicleParam && { vehicleType: vehicleParam as RouteConfig['vehicleType'] }),
+        ...(engineParam && { routingEngine: engineParam as RouteConfig['routingEngine'] }),
+        ...(stepsParam && { steps: stepsParam === 'true' })
+      }));
+    }
+    
+    setIsInitialized(true);
+  }, [searchParams, getAddressFromCoordinates, isInitialized]);
+  
+  // Update URL when route parameters change
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    const params = new URLSearchParams();
+    
+    if (origin) {
+      params.set('origin', `${origin[0]},${origin[1]}`);
+    }
+    if (destination) {
+      params.set('destination', `${destination[0]},${destination[1]}`);
+    }
+    if (routeConfig.vehicleType && routeConfig.vehicleType !== 'CAR') {
+      params.set('vehicle', routeConfig.vehicleType);
+    }
+    if (routeConfig.routingEngine && routeConfig.routingEngine !== 'OSM') {
+      params.set('engine', routeConfig.routingEngine);
+    }
+    if (routeConfig.steps) {
+      params.set('steps', 'true');
+    }
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    const currentUrl = window.location.search;
+    
+    if (newUrl !== currentUrl) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [origin, destination, routeConfig.vehicleType, routeConfig.routingEngine, routeConfig.steps, router, isInitialized]);
   
   // Auto-zoom to route when calculated
   useAutoZoom(route, { geometryFormat: routeConfig.geometries });
@@ -117,7 +219,10 @@ export default function Home() {
         destination: `${destination[1].toFixed(4)}, ${destination[0].toFixed(4)}`
       });
       
-      calculateRoute(origin, destination, routeConfig, debounceTime);
+      // Determine if traffic comparison should be enabled
+      const compareTraffic = shouldEnableTrafficComparison(routeConfig);
+      
+      calculateRoute(origin, destination, routeConfig, debounceTime, compareTraffic);
     }
   }, [origin, destination, routeConfig, calculateRoute, isDragging]);
 
@@ -302,6 +407,9 @@ export default function Home() {
         route={route}
         loading={routeLoading || geocodingLoading}
         error={routeError || geocodingError}
+        trafficRoute={trafficRoute}
+        trafficLoading={trafficLoading}
+        trafficError={trafficError}
         onRouteHover={setHoveredRouteIndex}
         showInstructions={showInstructions}
         originCoordinates={origin}
@@ -350,8 +458,9 @@ export default function Home() {
       </MapWithContextMenu>
       <SpeedProfile 
         route={route}
+        trafficRoute={trafficRoute}
         selectedRouteIndex={hoveredRouteIndex || 0}
-        show={routeConfig.steps}
+        show={route && route.routes && route.routes.length > 0}
         onStepHover={handleStepHover}
       />
     </main>

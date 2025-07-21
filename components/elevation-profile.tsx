@@ -8,6 +8,7 @@ import { formatDistance } from '@/lib/format';
 
 interface SpeedProfileProps {
   route: RouteResponse | null;
+  trafficRoute?: RouteResponse | null;
   selectedRouteIndex?: number;
   show?: boolean;
   onStepHover?: (stepGeometry: string | null, stepIndex: number | null) => void;
@@ -15,49 +16,39 @@ interface SpeedProfileProps {
 
 const chartConfig = {
   speed: {
-    label: "Speed",
+    label: "Regular Speed",
     color: "#3b82f6",
+  },
+  trafficSpeed: {
+    label: "Traffic Speed",
+    color: "#f97316",
   },
 } satisfies ChartConfig;
 
-export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onStepHover }: SpeedProfileProps) {
-  if (!show || !route || !route.routes || route.routes.length === 0) {
-    return null;
-  }
-
+// Helper function to extract speed data from a route
+function extractSpeedData(route: RouteResponse, selectedRouteIndex: number, routeType: 'regular' | 'traffic' = 'regular') {
   const selectedRoute = route.routes[selectedRouteIndex];
   if (!selectedRoute || !selectedRoute.legs || selectedRoute.legs.length === 0) {
-    return null;
+    return [];
   }
 
-  // Debug logging to understand actual data structure
-  console.log('🚗 SpeedProfile - Debug Data:');
-  console.log('selectedRoute:', selectedRoute);
-  console.log('selectedRoute.legs:', selectedRoute.legs);
-  
-  if (selectedRoute.legs && selectedRoute.legs[0]) {
-    console.log('First leg:', selectedRoute.legs[0]);
-    console.log('First leg annotation:', selectedRoute.legs[0].annotation);
-  }
+  console.log(`🚗 SpeedProfile - ${routeType} route data:`, selectedRoute);
 
-  // Extract speed data from route legs annotations
-  const speedData: Array<{ distance: number; speed: number; distanceLabel: string; stepIndex: number; geometry?: string }> = [];
+  const speedData: Array<{ 
+    distance: number; 
+    speed: number; 
+    trafficSpeed?: number;
+    distanceLabel: string; 
+    stepIndex: number; 
+    geometry?: string;
+  }> = [];
   let cumulativeDistance = 0;
   let globalStepIndex = 0;
 
-  selectedRoute.legs.forEach((leg: any, legIndex) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    console.log(`🦵 Leg ${legIndex}:`, leg);
-    console.log(`📊 Leg ${legIndex} annotation:`, leg.annotation);
-    console.log(`👣 Leg ${legIndex} steps:`, leg.steps);
-    
+  selectedRoute.legs.forEach((leg: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     // First priority: Use step-level data if available
     if (leg.steps && leg.steps.length > 0) {
-      console.log(`🚶 Using step-level data for leg ${legIndex} (${leg.steps.length} steps)`);
-      
-      leg.steps.forEach((step: any, stepIndex: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        console.log(`👣 Step ${stepIndex}:`, step);
-        console.log(`🗺️ Step ${stepIndex} geometry:`, step.geometry);
-        
+      leg.steps.forEach((step: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (step.distance && step.duration) {
           const stepDistance = step.distance;
           const stepDuration = step.duration;
@@ -67,34 +58,26 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
           const speedMs = stepDistance / stepDuration; // m/s
           const speedKmh = speedMs * 3.6; // km/h
           
-          console.log(`🏃 Step ${stepIndex}: ${stepDistance}m in ${stepDuration}s = ${speedKmh.toFixed(1)} km/h`);
-          
-          speedData.push({
+          const dataPoint = {
             distance: cumulativeDistance,
-            speed: Math.round(speedKmh),
+            speed: routeType === 'regular' ? Math.round(speedKmh) : 0,
+            trafficSpeed: routeType === 'traffic' ? Math.round(speedKmh) : undefined,
             distanceLabel: formatDistance(cumulativeDistance),
             stepIndex: globalStepIndex,
             geometry: step.geometry
-          });
+          };
+          
+          speedData.push(dataPoint);
           
           cumulativeDistance += stepDistance;
           globalStepIndex++;
-        } else {
-          console.log(`⚠️ Step ${stepIndex} missing distance or duration`);
         }
       });
       
     // Second priority: Use annotation arrays if steps not available
     } else if (leg.annotation && leg.annotation.distance && leg.annotation.duration) {
-      console.log(`📊 Using annotation data for leg ${legIndex}`);
-      
       const distances = leg.annotation.distance;
       const durations = leg.annotation.duration;
-      
-      console.log(`📏 Distances array length: ${distances.length}`);
-      console.log(`⏱️ Durations array length: ${durations.length}`);
-      console.log(`📏 Distances:`, distances);
-      console.log(`⏱️ Durations:`, durations);
       
       // Process each segment in the annotation arrays
       for (let i = 0; i < distances.length && i < durations.length; i++) {
@@ -106,66 +89,171 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
         const speedMs = segmentDistance / segmentDuration; // m/s
         const speedKmh = speedMs * 3.6; // km/h
         
-        console.log(`🏃 Annotation ${i}: ${segmentDistance}m in ${segmentDuration}s = ${speedKmh.toFixed(1)} km/h`);
-        
-        speedData.push({
+        const dataPoint = {
           distance: cumulativeDistance,
-          speed: Math.round(speedKmh),
+          speed: routeType === 'regular' ? Math.round(speedKmh) : 0,
+          trafficSpeed: routeType === 'traffic' ? Math.round(speedKmh) : undefined,
           distanceLabel: formatDistance(cumulativeDistance),
           stepIndex: globalStepIndex,
           geometry: undefined // No geometry available for annotation segments
-        });
+        };
+        
+        speedData.push(dataPoint);
         globalStepIndex++;
         
         cumulativeDistance += segmentDistance;
       }
       
     // Fallback: Use leg-level data
-    } else {
-      console.log(`❌ Leg ${legIndex} missing both steps and annotation data - using leg fallback`);
+    } else if (leg.distance && leg.duration) {
+      const speedMs = leg.distance / leg.duration;
+      const speedKmh = speedMs * 3.6;
       
-      if (leg.distance && leg.duration) {
-        const speedMs = leg.distance / leg.duration;
-        const speedKmh = speedMs * 3.6;
-        
-        console.log(`🏃 Leg ${legIndex} fallback: ${leg.distance}m in ${leg.duration}s = ${speedKmh.toFixed(1)} km/h`);
-        
-        speedData.push({
-          distance: cumulativeDistance,
-          speed: Math.round(speedKmh),
-          distanceLabel: formatDistance(cumulativeDistance),
-          stepIndex: globalStepIndex,
-          geometry: undefined // No geometry available for leg-level fallback
-        });
-        globalStepIndex++;
-        
-        cumulativeDistance += leg.distance;
-      }
+      const dataPoint = {
+        distance: cumulativeDistance,
+        speed: routeType === 'regular' ? Math.round(speedKmh) : 0,
+        trafficSpeed: routeType === 'traffic' ? Math.round(speedKmh) : undefined,
+        distanceLabel: formatDistance(cumulativeDistance),
+        stepIndex: globalStepIndex,
+        geometry: undefined // No geometry available for leg-level fallback
+      };
+      
+      speedData.push(dataPoint);
+      globalStepIndex++;
+      
+      cumulativeDistance += leg.distance;
     }
   });
 
-  if (speedData.length === 0) {
-    console.log('❌ No speed data available');
+  return speedData;
+}
+
+export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show = false, onStepHover }: SpeedProfileProps) {
+  if (!show || !route || !route.routes || route.routes.length === 0) {
     return null;
   }
 
-  console.log('📈 Final speed data:', speedData);
+  // Extract speed data from both routes
+  const regularSpeedData = extractSpeedData(route, selectedRouteIndex, 'regular');
+  const trafficSpeedData = trafficRoute ? extractSpeedData(trafficRoute, selectedRouteIndex, 'traffic') : [];
 
-  // Calculate speed stats
-  const speeds = speedData.map(d => d.speed);
-  const minSpeed = Math.min(...speeds);
-  const maxSpeed = Math.max(...speeds);
-  const avgSpeed = Math.round(speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length);
+  if (regularSpeedData.length === 0) {
+    console.log('❌ No regular speed data available');
+    return null;
+  }
+
+  // Debug logging to understand the data mismatch
+  console.log('🔵 Regular speed data points:', regularSpeedData.length);
+  console.log('🟠 Traffic speed data points:', trafficSpeedData.length);
+  
+  if (regularSpeedData.length > 0) {
+    console.log('🔵 Regular route total distance:', regularSpeedData[regularSpeedData.length - 1]?.distance);
+  }
+  if (trafficSpeedData.length > 0) {
+    console.log('🟠 Traffic route total distance:', trafficSpeedData[trafficSpeedData.length - 1]?.distance);
+  }
+
+  // Create a common distance grid for both routes by resampling
+  const maxDistance = Math.max(
+    regularSpeedData.length > 0 ? regularSpeedData[regularSpeedData.length - 1].distance : 0,
+    trafficSpeedData.length > 0 ? trafficSpeedData[trafficSpeedData.length - 1].distance : 0
+  );
+
+  // Create distance intervals (every ~200m for smooth curves)
+  const sampleInterval = Math.max(50, maxDistance / 100); // At least 50m, max 100 points
+  const distanceGrid = [];
+  for (let distance = 0; distance <= maxDistance; distance += sampleInterval) {
+    distanceGrid.push(distance);
+  }
+
+  console.log(`📏 Distance grid: 0 to ${maxDistance}m with ${distanceGrid.length} points (${sampleInterval}m intervals)`);
+
+  // Helper function to interpolate speed at a given distance
+  function interpolateSpeedAtDistance(speedData: Array<{ distance: number; speed?: number; trafficSpeed?: number }>, targetDistance: number): number | null {
+    if (speedData.length === 0) return null;
+    
+    // Find the two closest points to our target distance
+    let beforePoint = null;
+    let afterPoint = null;
+    
+    for (let i = 0; i < speedData.length; i++) {
+      const point = speedData[i];
+      if (point.distance <= targetDistance) {
+        beforePoint = point;
+      }
+      if (point.distance >= targetDistance && !afterPoint) {
+        afterPoint = point;
+        break;
+      }
+    }
+
+    // If target is before first point, use first point speed
+    if (!beforePoint && afterPoint) {
+      return afterPoint.speed || afterPoint.trafficSpeed || 0;
+    }
+    
+    // If target is after last point, use last point speed
+    if (beforePoint && !afterPoint) {
+      return beforePoint.speed || beforePoint.trafficSpeed || 0;
+    }
+    
+    // If we have exact match
+    if (beforePoint && beforePoint.distance === targetDistance) {
+      return beforePoint.speed || beforePoint.trafficSpeed || 0;
+    }
+    
+    // Interpolate between two points
+    if (beforePoint && afterPoint) {
+      const beforeSpeed = beforePoint.speed || beforePoint.trafficSpeed || 0;
+      const afterSpeed = afterPoint.speed || afterPoint.trafficSpeed || 0;
+      const distanceRatio = (targetDistance - beforePoint.distance) / (afterPoint.distance - beforePoint.distance);
+      return beforeSpeed + (afterSpeed - beforeSpeed) * distanceRatio;
+    }
+    
+    return null;
+  }
+
+  // Resample both routes to the common distance grid
+  const combinedData = distanceGrid.map(distance => {
+    const regularSpeed = interpolateSpeedAtDistance(regularSpeedData, distance);
+    const trafficSpeed = interpolateSpeedAtDistance(trafficSpeedData, distance);
+    
+    return {
+      distance,
+      speed: regularSpeed,
+      trafficSpeed,
+      distanceLabel: formatDistance(distance),
+      stepIndex: Math.floor(distance / sampleInterval), // Synthetic step index
+      geometry: undefined // No specific geometry for interpolated points
+    };
+  });
+
+  console.log('📈 Combined speed data points:', combinedData.length);
+  console.log('📈 Combined speed data sample:', combinedData.slice(0, 3));
+
+  // Calculate speed stats for both routes
+  const speeds = combinedData.map(d => d.speed).filter(s => s !== null && s > 0);
+  const trafficSpeeds = combinedData.map(d => d.trafficSpeed).filter(s => s !== null && s > 0);
+  
+  const avgSpeed = speeds.length > 0 ? Math.round(speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length) : 0;
+  const avgTrafficSpeed = trafficSpeeds.length > 0 ? Math.round(trafficSpeeds.reduce((sum, speed) => sum + speed, 0) / trafficSpeeds.length) : null;
 
   return (
     <Card className="absolute bottom-4 left-4 right-4 h-48 z-10 shadow-lg animate-in slide-in-from-bottom-2 duration-300" data-testid="speed-profile">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Speed Profile</CardTitle>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>Min: {minSpeed} km/h</span>
-            <span>Max: {maxSpeed} km/h</span>
-            <span>Avg: {avgSpeed} km/h</span>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>Regular: {avgSpeed} km/h</span>
+            </div>
+            {avgTrafficSpeed && (
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Traffic: {avgTrafficSpeed} km/h</span>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -173,7 +261,7 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
         <ChartContainer config={chartConfig} className="h-24 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart 
-              data={speedData} 
+              data={combinedData} 
               margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
               onMouseMove={(data) => {
                 if (data && data.activePayload && data.activePayload[0] && onStepHover) {
@@ -191,6 +279,10 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
                 <linearGradient id="speedGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="trafficSpeedGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#f97316" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
               <XAxis 
@@ -210,7 +302,10 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
               <ChartTooltip
                 content={<ChartTooltipContent 
                   labelFormatter={(value) => `Distance: ${formatDistance(Number(value))}`}
-                  formatter={(value) => [`${value} km/h`, 'Speed']}
+                  formatter={(value, name) => [
+                    `${value} km/h`, 
+                    name === 'speed' ? 'Regular Speed' : 'Traffic Speed'
+                  ]}
                 />}
               />
               <Area
@@ -219,7 +314,19 @@ export function SpeedProfile({ route, selectedRouteIndex = 0, show = false, onSt
                 stroke="#3b82f6"
                 strokeWidth={2}
                 fill="url(#speedGradient)"
+                connectNulls={false}
               />
+              {trafficRoute && (
+                <Area
+                  type="monotone"
+                  dataKey="trafficSpeed"
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  fill="url(#trafficSpeedGradient)"
+                  fillOpacity={0.6}
+                  connectNulls={false}
+                />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         </ChartContainer>
