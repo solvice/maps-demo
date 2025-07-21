@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Clock, MapPin, Car, Bike, Truck, Code, HelpCircle, Share, List } from 'lucide-react';
+import { Loader2, Car, Bike, Truck, Code, HelpCircle, Share, List } from 'lucide-react';
 import { AutocompleteInput } from '@/components/autocomplete-input';
 import { RouteResponse } from '@/lib/solvice-api';
 import { RouteInstructions } from '@/components/route-instructions';
+import { RouteInfoList } from '@/components/route-info-list';
 import { toast } from 'sonner';
-import { calculateTrafficDifference, formatTrafficDifference } from '@/lib/route-utils';
+import { useRouteStats } from '@/hooks/use-route-stats';
 
 type Coordinates = [number, number];
 
@@ -96,69 +97,23 @@ export function RouteControlPanel({
   destinationCoordinates: destinationCoords
 }: RouteControlPanelProps) {
 
-
-  // Format duration from seconds to readable format
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours}h ${remainingMinutes}m`;
-  };
-
-  // Format distance from meters to readable format
-  const formatDistance = (meters: number): string => {
-    if (meters < 1000) {
-      return `${Math.round(meters)} m`;
-    }
-    return `${(meters / 1000).toFixed(1)} km`;
-  };
-
-  const hasRoute = route && route.routes && route.routes[0] && 
-    route.routes[0].distance !== undefined && route.routes[0].duration !== undefined;
-
-  const hasTrafficRoute = trafficRoute && trafficRoute.routes && trafficRoute.routes[0] && 
-    trafficRoute.routes[0].distance !== undefined && trafficRoute.routes[0].duration !== undefined;
-
-  // Calculate traffic difference if both routes are available
-  const trafficDifference = hasRoute && hasTrafficRoute 
-    ? calculateTrafficDifference(route, trafficRoute)
-    : null;
-
-  // Format traffic difference for display
-  const trafficDifferenceText = trafficDifference !== null 
-    ? formatTrafficDifference(trafficDifference) 
-    : '';
-
-  // Get styling for traffic difference based on severity
-  const getTrafficDifferenceStyle = (seconds: number | null): string => {
-    if (seconds === null) return '';
-    if (seconds === 0) return 'text-green-600'; // No delay
-    if (seconds < 0) return 'text-green-600'; // Traffic savings
-    if (seconds < 900) return 'text-yellow-600'; // Small delay (< 15 min)
-    return 'text-red-600'; // Severe delay (>= 15 min)
-  };
-
-  // Route colors matching the RouteLayer colors
-  const routeColors = [
-    '#3b82f6', // Blue for primary route
-    '#93c5fd', // Light blue for alternatives
-    '#93c5fd', // Light blue for alternatives
-    '#93c5fd'  // Light blue for alternatives
-  ];
-
-  // Generate request JSON for debugging
-  const getRequestJson = () => {
-    if (!originCoords || !destinationCoords) {
-      return null;
-    }
-    return {
-      coordinates: [originCoords, destinationCoords],
-      ...routeConfig
-    };
-  };
+  // Use the custom hook to extract route statistics logic
+  const {
+    hasRoute,
+    hasTrafficRoute,
+    trafficDifference,
+    trafficDifferenceText,
+    getTrafficDifferenceStyle,
+    routeColors,
+    getRequestJson,
+    getShareUrl
+  } = useRouteStats({
+    route,
+    trafficRoute,
+    routeConfig,
+    originCoordinates: originCoords,
+    destinationCoordinates: destinationCoords
+  });
 
   // Copy request JSON for debugging
   const copyRequestJson = async () => {
@@ -175,23 +130,6 @@ export function RouteControlPanel({
       console.error('Failed to copy:', err);
       toast.error('Failed to copy to clipboard');
     }
-  };
-
-  // Generate shareable URL
-  const getShareUrl = () => {
-    if (!originCoords || !destinationCoords) {
-      return null;
-    }
-    
-    const url = new URL(window.location.origin + '/route');
-    url.searchParams.set('origin', `${originCoords[0]},${originCoords[1]}`);
-    url.searchParams.set('destination', `${destinationCoords[0]},${destinationCoords[1]}`);
-    
-    if (routeConfig.departureTime) {
-      url.searchParams.set('departureTime', routeConfig.departureTime);
-    }
-    
-    return url.toString();
   };
 
   // Copy share URL
@@ -396,102 +334,17 @@ export function RouteControlPanel({
           </div>
         )}
 
-        {(hasRoute || hasTrafficRoute) && !loading && (
-          <div className="space-y-2 pt-2 border-t" data-testid="route-info">
-            {/* Regular route display */}
-            {hasRoute && route.routes.map((routeData, index) => (
-              routeData.distance !== undefined && routeData.duration !== undefined && (
-                <div 
-                  key={`regular-${index}`}
-                  className="p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors"
-                  onMouseEnter={() => onRouteHover?.(index)}
-                  onMouseLeave={() => onRouteHover?.(null)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: routeColors[index] || routeColors[0] }}
-                      />
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span 
-                        className="font-medium"
-                        data-testid="regular-route-duration"
-                        aria-label="Regular route duration"
-                      >
-                        {formatDuration(routeData.duration)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">
-                        {formatDistance(routeData.distance)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Traffic comparison for this route */}
-                  {hasTrafficRoute && trafficRoute.routes[index] && !trafficLoading && (
-                    <div className="mt-2 flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-orange-500" />
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span 
-                          className="font-medium"
-                          data-testid="traffic-route-duration"
-                          aria-label="Traffic route duration"
-                        >
-                          With traffic: {formatDuration(trafficRoute.routes[index].duration!)}
-                        </span>
-                      </div>
-                      {trafficDifferenceText && (
-                        <span 
-                          className={`font-medium ${getTrafficDifferenceStyle(trafficDifference)}`}
-                          data-testid="traffic-difference"
-                          aria-label={`Traffic delay: ${trafficDifferenceText}`}
-                        >
-                          {trafficDifferenceText}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            ))}
-            
-            {/* Traffic-only route display (when regular route failed) */}
-            {!hasRoute && hasTrafficRoute && trafficRoute.routes.map((routeData, index) => (
-              routeData.distance !== undefined && routeData.duration !== undefined && (
-                <div 
-                  key={`traffic-only-${index}`}
-                  className="p-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors"
-                  onMouseEnter={() => onRouteHover?.(index)}
-                  onMouseLeave={() => onRouteHover?.(null)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-3 h-3 rounded-full bg-orange-500" />
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span 
-                        className="font-medium"
-                        data-testid="traffic-route-duration"
-                        aria-label="Traffic route duration"
-                      >
-                        With traffic: {formatDuration(routeData.duration)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">
-                        {formatDistance(routeData.distance)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            ))}
-          </div>
-        )}
+        <RouteInfoList
+          route={route}
+          trafficRoute={trafficRoute}
+          trafficLoading={trafficLoading}
+          loading={loading}
+          routeColors={routeColors}
+          onRouteHover={onRouteHover}
+          trafficDifference={trafficDifference}
+          trafficDifferenceText={trafficDifferenceText}
+          getTrafficDifferenceStyle={getTrafficDifferenceStyle}
+        />
 
 
 
