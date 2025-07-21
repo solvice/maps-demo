@@ -190,6 +190,108 @@ describe('RouteControlPanel duplicate functions - Current Behavior Tests', () =>
   });
 });
 
+describe('New Utility Functions - Enhanced Format Functions', () => {
+  describe('formatSpeed', () => {
+    test('formats speed from m/s to km/h', () => {
+      expect(formatSpeed(10)).toBe('36.0 km/h'); // 10 m/s = 36 km/h
+      expect(formatSpeed(27.78)).toBe('100.0 km/h'); // ~27.78 m/s = 100 km/h
+      expect(formatSpeed(0)).toBe('0.0 km/h');
+    });
+
+    test('handles edge cases gracefully', () => {
+      expect(formatSpeed(null as any)).toBe('0.0 km/h');
+      expect(formatSpeed(undefined as any)).toBe('0.0 km/h');
+      expect(formatSpeed(NaN)).toBe('0.0 km/h');
+      expect(formatSpeed(Infinity)).toBe('0.0 km/h');
+      expect(formatSpeed(-10)).toBe('-36.0 km/h');
+    });
+
+    test('formats with one decimal place', () => {
+      expect(formatSpeed(5.5556)).toBe('20.0 km/h'); // Rounds to 20.0
+      expect(formatSpeed(13.89)).toBe('50.0 km/h'); // 50.004 rounds to 50.0
+    });
+  });
+
+  describe('formatCoordinates', () => {
+    test('formats coordinate pairs', () => {
+      expect(formatCoordinates([4.3517, 50.8503])).toBe('4.3517°, 50.8503°');
+      expect(formatCoordinates([0, 0])).toBe('0.0000°, 0.0000°');
+      expect(formatCoordinates([-74.006, 40.7128])).toBe('-74.0060°, 40.7128°'); // NYC
+    });
+
+    test('handles edge cases gracefully', () => {
+      expect(formatCoordinates(null as any)).toBe('0.0000°, 0.0000°');
+      expect(formatCoordinates(undefined as any)).toBe('0.0000°, 0.0000°');
+      expect(formatCoordinates([] as any)).toBe('0.0000°, 0.0000°');
+      expect(formatCoordinates([1] as any)).toBe('0.0000°, 0.0000°'); // Wrong length
+      expect(formatCoordinates([NaN, 50] as any)).toBe('0.0000°, 0.0000°');
+      expect(formatCoordinates([4, Infinity] as any)).toBe('0.0000°, 0.0000°');
+    });
+
+    test('formats with 4 decimal places precision', () => {
+      expect(formatCoordinates([4.123456789, 50.987654321])).toBe('4.1235°, 50.9877°');
+    });
+  });
+
+  describe('formatPercentage', () => {
+    test('formats percentage values', () => {
+      expect(formatPercentage(85.2)).toBe('85.2%');
+      expect(formatPercentage(100)).toBe('100.0%');
+      expect(formatPercentage(0)).toBe('0.0%');
+      expect(formatPercentage(123.456)).toBe('123.5%');
+    });
+
+    test('handles edge cases gracefully', () => {
+      expect(formatPercentage(null as any)).toBe('0.0%');
+      expect(formatPercentage(undefined as any)).toBe('0.0%');
+      expect(formatPercentage(NaN)).toBe('0.0%');
+      expect(formatPercentage(Infinity)).toBe('0.0%');
+      expect(formatPercentage(-50)).toBe('-50.0%');
+    });
+
+    test('formats with one decimal place', () => {
+      expect(formatPercentage(33.333)).toBe('33.3%');
+      expect(formatPercentage(66.666)).toBe('66.7%');
+    });
+  });
+});
+
+describe('Enhanced Edge Case Handling', () => {
+  describe('formatDuration edge case improvements', () => {
+    test('handles null/undefined gracefully', () => {
+      expect(formatDuration(null as any)).toBe('0 min');
+      expect(formatDuration(undefined as any)).toBe('0 min');
+      expect(formatDuration(NaN)).toBe('0 min');
+      expect(formatDuration(Infinity)).toBe('0 min');
+    });
+  });
+
+  describe('formatDistance edge case improvements', () => {
+    test('handles null/undefined gracefully', () => {
+      expect(formatDistance(null as any)).toBe('0.0 km');
+      expect(formatDistance(undefined as any)).toBe('0.0 km');
+      expect(formatDistance(NaN)).toBe('0.0 km');
+      expect(formatDistance(Infinity)).toBe('0.0 km');
+    });
+  });
+});
+
+describe('Performance Benchmarks - Enhanced Functions', () => {
+  test('all new functions perform well', () => {
+    const iterations = 1000;
+    const start = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+      formatSpeed(i / 10);
+      formatCoordinates([i / 1000, i / 2000]);
+      formatPercentage(i / 10);
+    }
+    
+    const end = performance.now();
+    expect(end - start).toBeLessThan(20); // Should complete in < 20ms
+  });
+});
+
 describe('Behavioral Comparison Summary', () => {
   test('documents key differences between implementations', () => {
     const differences = {

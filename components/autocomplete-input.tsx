@@ -14,12 +14,14 @@ interface GeocodingResult {
 }
 
 interface AutocompleteInputProps {
-  value: string;
+  value: string | null | undefined;
   onChange: (value: string) => void;
   onSelect: (result: GeocodingResult) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  id?: string;
+  'aria-invalid'?: boolean | 'true' | 'false';
 }
 
 export function AutocompleteInput({
@@ -29,6 +31,8 @@ export function AutocompleteInput({
   placeholder = "Enter location",
   className,
   disabled = false,
+  id,
+  'aria-invalid': ariaInvalid,
 }: AutocompleteInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodingResult[]>([]);
@@ -167,13 +171,15 @@ export function AutocompleteInput({
     <div ref={containerRef} className="relative w-full">
       <Input
         ref={inputRef}
-        value={value}
+        id={id}
+        value={value ?? ''}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
         autoComplete="off"
+        aria-invalid={ariaInvalid}
       />
       
       {isOpen && (

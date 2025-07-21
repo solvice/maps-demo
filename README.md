@@ -1,17 +1,29 @@
 # Solvice Maps Demo
 
-A comprehensive interactive mapping application built with Next.js, MapLibre GL JS, and the Solvice API. Features real-time routing with automatic traffic comparison, speed analysis, turn-by-turn navigation, and URL-shareable routes.
+A comprehensive interactive mapping application built with Next.js, MapLibre GL JS, and the Solvice API. Features real-time routing with automatic traffic comparison, distance/duration matrix calculations, speed analysis, turn-by-turn navigation, and URL-shareable routes.
 
 🌐 **Live Demo**: [https://maps-demo.solvice.io](https://maps-demo.solvice.io)
 
 ## 🚀 Features
 
-### Core Mapping
+### Dual Demo Experience
+- **Unified Interface**: Seamless navigation between Route Planning and Table Sync demos
+- **Shared Map**: Single persistent map instance across both demos for smooth transitions
+- **Consistent Design**: Unified layout with centered navigation and equal-sized control panels
+
+### Route Planning Demo
 - **Interactive Map**: MapLibre GL JS with Solvice Maps tiles (light/dark themes)
-- **Route Planning**: Click-to-place markers with drag-and-drop repositioning
+- **Click-to-Place Markers**: Click on map to set origin/destination with drag-and-drop repositioning
 - **Real-time Routing**: Instant route calculation with zero-delay during marker dragging
 - **Multiple Vehicle Types**: Car, truck, bike support with different routing profiles
 - **URL Route Sharing**: Share routes via URL parameters for easy collaboration
+
+### Table Sync Demo  
+- **Distance/Duration Matrix**: Calculate travel times/distances between multiple points
+- **JSON Input**: Paste table requests with coordinates, sources, destinations, and parameters
+- **Interactive Visualization**: Blue circle markers with hover tooltips showing coordinates
+- **Connection Visualization**: Hover over markers to see distance/duration to other points
+- **Real-time Calculation**: Automatic matrix calculation with performance timing notifications
 
 ### Advanced Analytics
 - **Always-On Traffic Comparison**: Automatic dual requests showing regular vs traffic-aware routes
@@ -69,14 +81,24 @@ GOOGLE_MAPS_API_KEY=your_google_places_api_key_here
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application menu, or go directly to [http://localhost:3000/route](http://localhost:3000/route) for the route planning demo.
+Open [http://localhost:3000](http://localhost:3000) to see the application menu, or go directly to [http://localhost:3000/route](http://localhost:3000/route) for route planning or [http://localhost:3000/table](http://localhost:3000/table) for table sync demo.
 
 ### 4. Basic Usage
-1. **Place Markers**: Click on the map to set origin (green) and destination (red)
-2. **Configure Route**: Use vehicle type toggles (Car/Truck/Bike) in the control panel
-3. **View Traffic Comparison**: Speed profile automatically shows regular vs traffic routes
-4. **Share Routes**: Copy URL to share routes with URL parameters
-5. **Interactive Exploration**: Hover over speed chart to highlight route segments
+
+#### Route Planning Demo
+1. **Navigate to Route Demo**: Click "Route Planning" in the top navigation
+2. **Place Markers**: Click on the map to set origin (green) and destination (red)
+3. **Configure Route**: Use vehicle type toggles (Car/Truck/Bike) in the control panel
+4. **View Traffic Comparison**: Speed profile automatically shows regular vs traffic routes
+5. **Share Routes**: Copy URL to share routes with URL parameters
+6. **Interactive Exploration**: Hover over speed chart to highlight route segments
+
+#### Table Sync Demo  
+1. **Navigate to Table Demo**: Click "Table Sync" in the top navigation
+2. **Paste JSON Request**: Enter table request JSON with coordinates and parameters
+3. **View Matrix Results**: Blue markers appear on map with coordinate tooltips
+4. **Explore Connections**: Hover over markers to see distance/duration to other points
+5. **Performance Tracking**: Toast notifications show calculation timing
 
 ### 5. URL Route Sharing
 Share routes using URL parameters:
@@ -143,22 +165,32 @@ pnpm lint:fix      # Auto-fix linting issues
 
 ```
 maps-demo/
-├── app/                    # Next.js App Router
-│   ├── page.tsx           # Demo navigation homepage
-│   ├── route/             # Route planning demo
-│   │   └── page.tsx       # Main route planning component
-│   ├── layout.tsx         # Root layout
-│   └── api/route/         # Secure API endpoints
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components
-│   ├── map-*.tsx         # Mapping components
-│   ├── route-*.tsx       # Routing components
-│   └── *.tsx             # Feature components
-├── contexts/             # React Context providers
-├── hooks/                # Custom React hooks
-├── lib/                  # Utilities and API clients
-├── tests/                # Test suites
-└── docs/                 # Documentation
+├── app/                      # Next.js App Router
+│   ├── page.tsx             # Demo navigation homepage
+│   ├── route/               # Route planning demo
+│   │   └── page.tsx         # Route demo with DemoLayout
+│   ├── table/               # Table sync demo
+│   │   └── page.tsx         # Table demo with DemoLayout
+│   ├── layout.tsx           # Root layout with error boundary
+│   └── api/                 # Secure API endpoints
+│       ├── route/           # Route API proxy
+│       └── table/           # Table API proxy
+├── components/              # React components
+│   ├── ui/                 # shadcn/ui components
+│   ├── demo-*.tsx          # Unified demo layout components
+│   ├── map-*.tsx           # Mapping components
+│   ├── route-*.tsx         # Route-specific components
+│   ├── table-*.tsx         # Table-specific components
+│   └── *.tsx               # Shared feature components
+├── contexts/               # React Context providers
+├── hooks/                  # Custom React hooks
+│   ├── use-route.ts        # Route calculation logic
+│   └── use-table.ts        # Table calculation logic
+├── lib/                    # Utilities and API clients
+│   ├── solvice-api.ts      # Route API client
+│   └── solvice-table-api.ts # Table API client
+├── tests/                  # Test suites
+└── docs/                   # Documentation
 ```
 
 ## 🔗 API Integration
@@ -169,11 +201,26 @@ maps-demo/
 - **Features**: Multi-modal routing, traffic data, turn-by-turn instructions
 - **Security**: Server-side proxy to protect API credentials
 
+### Solvice Table Sync API
+- **Endpoint**: `https://routing.solvice.io/table/sync`
+- **Authentication**: API key via Authorization header
+- **Features**: Distance/duration matrix calculations, synchronous processing
+- **Input**: Coordinates array with sources, destinations, and configuration options
+- **Security**: Server-side proxy to protect API credentials
+
 ### Request Configuration
+
+#### Route API
 - **Vehicle Types**: CAR, TRUCK, BIKE, ELECTRIC_CAR, ELECTRIC_BIKE
 - **Routing Engines**: OSM (free), TOMTOM (traffic), GOOGLE, ANYMAP
 - **Geometry Formats**: polyline (5 decimal), polyline6 (6 decimal)
 - **Additional Options**: alternatives, steps, annotations, departure time
+
+#### Table API
+- **Vehicle Types**: CAR, TRUCK, BIKE, ELECTRIC_CAR, ELECTRIC_BIKE
+- **Routing Engines**: OSM (free), TOMTOM (traffic), GOOGLE, ANYMAP
+- **Annotations**: distance, duration, speed
+- **Matrix Options**: sources, destinations arrays for partial matrices
 
 ## 🎯 Key Features Deep Dive
 
@@ -218,6 +265,8 @@ maps-demo/
 - [x] **Google Places Integration**: Real address autocomplete with intelligent fallback
 - [x] **Interactive Help System**: Clickable examples and comprehensive documentation
 - [x] **Dual Speed Profiles**: Traffic vs regular route comparison with color coding
+- [x] **Table Sync Demo**: Distance/duration matrix calculations with interactive visualization
+- [x] **Unified Demo Layout**: Shared map with seamless navigation between route/table demos
 
 ### Immediate Improvements
 - [ ] Enhanced accessibility features (ARIA labels, keyboard navigation)

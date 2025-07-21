@@ -63,9 +63,7 @@ export function getRouteBounds(
  * Calculate appropriate zoom level based on bounds
  */
 function calculateZoomFromBounds(
-  bounds: [[number, number], [number, number]],
-  mapWidth: number = 800,
-  mapHeight: number = 600
+  bounds: [[number, number], [number, number]]
 ): number {
   const [[minLng, minLat], [maxLng, maxLat]] = bounds;
   

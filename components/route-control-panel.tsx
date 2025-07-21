@@ -1,13 +1,12 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Car, Bike, Truck, Code, HelpCircle, Share, List } from 'lucide-react';
-import { AutocompleteInput } from '@/components/autocomplete-input';
+import { Loader2, Code, HelpCircle, Share, List, BookOpen } from 'lucide-react';
+import { LocationInputPair } from '@/components/location-input-pair';
+import { VehicleSelector } from '@/components/vehicle-selector';
 import { RouteResponse } from '@/lib/solvice-api';
 import { RouteInstructions } from '@/components/route-instructions';
 import { RouteInfoList } from '@/components/route-info-list';
@@ -100,7 +99,6 @@ export function RouteControlPanel({
   // Use the custom hook to extract route statistics logic
   const {
     hasRoute,
-    hasTrafficRoute,
     trafficDifference,
     trafficDifferenceText,
     getTrafficDifferenceStyle,
@@ -153,96 +151,115 @@ export function RouteControlPanel({
     <TooltipProvider>
       <Card className="absolute top-4 left-4 w-72 z-10 shadow-lg" data-testid="route-control-panel">
         <CardContent className="p-3 space-y-3">
+        {/* Icons in top-right corner */}
+        <div className="absolute top-3 right-3 flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+                onClick={() => window.open('https://maps.solvice.io/route/post-route', '_blank')}
+              >
+                <BookOpen className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Route API Documentation</p>
+            </TooltipContent>
+          </Tooltip>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" side="right" align="start">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">How to Use Solvice Maps</h3>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div>
+                      <strong>🗺️ Set Route Points:</strong>
+                      <ul className="ml-2 mt-1 space-y-1">
+                        <li>• Click on map to place origin/destination</li>
+                        <li>• Type addresses in the input fields</li>
+                        <li>• Drag markers to adjust locations</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <strong>🚗 Vehicle Options:</strong>
+                      <ul className="ml-2 mt-1 space-y-1">
+                        <li>• Car: Standard routing</li>
+                        <li>• Truck: Commercial vehicle restrictions</li>
+                        <li>• Bike: Bicycle-friendly routes</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <strong>📊 Features:</strong>
+                      <ul className="ml-2 mt-1 space-y-1">
+                        <li>• Speed profile chart with automatic traffic comparison</li>
+                        <li>• Turn-by-turn navigation instructions</li>
+                        <li>• Multiple routing engines (OSM, TomTom, Google)</li>
+                        <li>• Always-on real-time traffic data integration</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold text-sm mb-2">📎 Share Routes</h4>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>Share routes by copying the URL with parameters:</p>
+                    <div className="bg-muted p-2 rounded text-xs font-mono break-all">
+                      /route?origin=3.7174,51.0543&destination=3.7274,51.0643&departureTime=2024-01-01T12:00:00.000Z
+                    </div>
+                    <div className="space-y-1 mt-2">
+                      <div><code className="bg-muted px-1 rounded">origin</code> - Start coordinates (lng,lat)</div>
+                      <div><code className="bg-muted px-1 rounded">destination</code> - End coordinates (lng,lat)</div>
+                      <div><code className="bg-muted px-1 rounded">departureTime</code> - ISO timestamp (optional)</div>
+                    </div>
+                    <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-xs font-medium text-blue-800 mb-1">Try it now:</p>
+                      <a
+                        href="/route?origin=3.7174,51.0543&destination=3.7274,51.0643"
+                        className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline font-mono break-all"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const url = new URL(window.location.origin + '/route');
+                          url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643";
+                          window.location.href = url.toString();
+                        }}
+                      >
+                        /route?origin=3.7174,51.0543&destination=3.7274,51.0643
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold text-sm mb-2">🔧 Developer Tools</h4>
+                  <div className="text-xs text-muted-foreground">
+                    <p>Use the action buttons at the bottom of the panel to share routes and access debugging tools.</p>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {/* Header with Solvice Maps Logo */}
         <div className="text-center pb-2">
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-xl font-extrabold text-black tracking-wide">
               Solvice Maps
             </h1>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4" side="right" align="start">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">How to Use Solvice Maps</h3>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div>
-                        <strong>🗺️ Set Route Points:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Click on map to place origin/destination</li>
-                          <li>• Type addresses in the input fields</li>
-                          <li>• Drag markers to adjust locations</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <strong>🚗 Vehicle Options:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Car: Standard routing</li>
-                          <li>• Truck: Commercial vehicle restrictions</li>
-                          <li>• Bike: Bicycle-friendly routes</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <strong>📊 Features:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Speed profile chart with automatic traffic comparison</li>
-                          <li>• Turn-by-turn navigation instructions</li>
-                          <li>• Multiple routing engines (OSM, TomTom, Google)</li>
-                          <li>• Always-on real-time traffic data integration</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3">
-                    <h4 className="font-semibold text-sm mb-2">📎 Share Routes</h4>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p>Share routes by copying the URL with parameters:</p>
-                      <div className="bg-muted p-2 rounded text-xs font-mono break-all">
-                        /route?origin=3.7174,51.0543&destination=3.7274,51.0643&departureTime=2024-01-01T12:00:00.000Z
-                      </div>
-                      <div className="space-y-1 mt-2">
-                        <div><code className="bg-muted px-1 rounded">origin</code> - Start coordinates (lng,lat)</div>
-                        <div><code className="bg-muted px-1 rounded">destination</code> - End coordinates (lng,lat)</div>
-                        <div><code className="bg-muted px-1 rounded">departureTime</code> - ISO timestamp (optional)</div>
-                      </div>
-                      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                        <p className="text-xs font-medium text-blue-800 mb-1">Try it now:</p>
-                        <a
-                          href="/route?origin=3.7174,51.0543&destination=3.7274,51.0643"
-                          className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline font-mono break-all"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const url = new URL(window.location.origin + '/route');
-                            url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643";
-                            window.location.href = url.toString();
-                          }}
-                        >
-                          /route?origin=3.7174,51.0543&destination=3.7274,51.0643
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3">
-                    <h4 className="font-semibold text-sm mb-2">🔧 Developer Tools</h4>
-                    <div className="text-xs text-muted-foreground">
-                      <p>Use the action buttons at the bottom of the panel to share routes and access debugging tools.</p>
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
           <div className="text-xs text-muted-foreground">
             <a 
@@ -255,54 +272,22 @@ export function RouteControlPanel({
             </a>
           </div>
         </div>
-        {/* Vehicle Type Toggle Group */}
-        <div className="flex justify-center">
-          <ToggleGroup
-            type="single"
-            value={vehicleType || 'CAR'}
-            onValueChange={(value) => value && onVehicleTypeChange(value)}
-            className="justify-center"
-            data-testid="vehicle-type-toggle"
-          >
-            <ToggleGroupItem value="CAR" aria-label="Car" className="flex items-center justify-center">
-              <Car className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="TRUCK" aria-label="Truck" className="flex items-center justify-center">
-              <Truck className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="BIKE" aria-label="Bike" className="flex items-center justify-center">
-              <Bike className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+        {/* Vehicle Type Selection */}
+        <VehicleSelector
+          vehicleType={vehicleType}
+          onVehicleTypeChange={onVehicleTypeChange}
+        />
 
-        {/* Origin Input */}
-        <div className="space-y-1">
-          <Label htmlFor="origin-input" className="text-xs font-medium flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
-            Origin
-          </Label>
-          <AutocompleteInput
-            placeholder="Enter origin"
-            value={origin}
-            onChange={onOriginChange}
-            onSelect={onOriginSelect}
-          />
-        </div>
-
-        {/* Destination Input */}
-        <div className="space-y-1">
-          <Label htmlFor="destination-input" className="text-xs font-medium flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full" />
-            Destination
-          </Label>
-          <AutocompleteInput
-            placeholder="Enter destination"
-            value={destination}
-            onChange={onDestinationChange}
-            onSelect={onDestinationSelect}
-          />
-        </div>
+        {/* Location Inputs */}
+        <LocationInputPair
+          origin={origin}
+          onOriginChange={onOriginChange}
+          onOriginSelect={onOriginSelect}
+          destination={destination}
+          onDestinationChange={onDestinationChange}
+          onDestinationSelect={onDestinationSelect}
+          disabled={loading}
+        />
 
         {/* Route Information with Traffic Comparison */}
         {(loading || trafficLoading) && (
