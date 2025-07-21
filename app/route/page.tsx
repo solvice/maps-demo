@@ -72,6 +72,8 @@ function HomeContent() {
     const destParam = searchParams.get('destination');
     const departureTimeParam = searchParams.get('departureTime');
     
+    console.log('URL Parameters:', { originParam, destParam, departureTimeParam });
+    
     if (originParam) {
       try {
         const parts = originParam.split(',');
@@ -122,6 +124,36 @@ function HomeContent() {
     
     setIsInitialized(true);
   }, [searchParams, getAddressFromCoordinates, isInitialized]);
+
+  // Auto-center map to URL parameters on initial load
+  useEffect(() => {
+    console.log('Auto-center effect:', { isInitialized, hasMap: !!map, origin, destination, hasRoute: !!route });
+    if (isInitialized && map && (origin || destination) && !route) {
+      const targetCoordinate = origin || destination;
+      if (targetCoordinate && map.isStyleLoaded()) {
+        console.log('Centering map to URL parameter coordinate:', targetCoordinate);
+        map.flyTo({
+          center: targetCoordinate,
+          zoom: 12,
+          duration: 1000,
+          essential: true
+        });
+      } else if (targetCoordinate && map && !map.isStyleLoaded()) {
+        console.log('Map style not loaded, waiting for styledata event');
+        map.once('styledata', () => {
+          console.log('Style loaded, now centering to:', targetCoordinate);
+          map.flyTo({
+            center: targetCoordinate,
+            zoom: 12,
+            duration: 1000,
+            essential: true
+          });
+        });
+      } else {
+        console.log('Map not ready for centering:', { targetCoordinate, isStyleLoaded: map?.isStyleLoaded() });
+      }
+    }
+  }, [isInitialized, map, origin, destination, route]);
   
   // Update URL when route parameters change
   useEffect(() => {
@@ -452,7 +484,7 @@ function HomeContent() {
         onMapStyleChange={setMapStyle}
       />
       <MapWithContextMenu 
-        center={route ? undefined : (origin || destination) ? (origin || destination) : [3.7174, 51.0543]}
+        center={route ? undefined : [3.7174, 51.0543]}
         style={mapStyle}
         onClick={handleMapClick}
         onSetOrigin={handleSetOrigin}
