@@ -586,7 +586,7 @@ export function RouteControlPanel({
         {/* Turn-by-turn instructions that roll out */}
         {showInstructions && (
           <div className="mt-3 pt-3 border-t animate-in slide-in-from-top-2 duration-300">
-            <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+            <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
               <RouteInstructions
                 route={route}
                 selectedRouteIndex={0}

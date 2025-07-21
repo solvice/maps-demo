@@ -302,7 +302,7 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10 }}
-                tickFormatter={(value) => `${value} km/h`}
+                tickFormatter={(value) => `${Math.round(value)} km/h`}
                 domain={['dataMin - 5', 'dataMax + 5']}
               />
               <ChartTooltip

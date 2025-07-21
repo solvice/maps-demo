@@ -6,7 +6,7 @@ import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
 import { RouteControlPanel } from '@/components/route-control-panel';
 import { MapControls } from '@/components/map-controls';
-import { SpeedProfile } from '@/components/elevation-profile';
+import { SpeedProfile } from '@/components/speed-profile';
 import { StepHighlight } from '@/components/step-highlight';
 import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
