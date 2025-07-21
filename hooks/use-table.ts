@@ -118,10 +118,10 @@ export function useTable() {
         const startTime = performance.now();
         
         // Prepare requests for both baseline and traffic-aware routing
-        const baselineOptions = { ...options, engine: 'OSM' };
+        const baselineOptions = { ...options, engine: 'OSM' as const };
         const trafficOptions = { 
           ...options, 
-          engine: 'TOMTOM',
+          engine: 'TOMTOM' as const,
           departureTime: new Date().toISOString() // Current time for traffic-aware routing
         };
         

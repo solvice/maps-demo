@@ -84,8 +84,11 @@ export function TableMarker({
         element: el,
         offset: [0, 0],
       })
-        .setLngLat(coordinates)
-        .addTo(map);
+        .setLngLat(coordinates);
+
+      if (map) {
+        marker.addTo(map);
+      }
 
       markerRef.current = marker;
     }

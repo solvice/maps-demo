@@ -59,6 +59,9 @@ export function TableConnections({
       map.removeSource(backgroundSourceId);
     }
 
+    let handleBackgroundMouseEnter: ((e: maplibregl.MapLayerMouseEvent) => void) | null = null;
+    let handleBackgroundMouseLeave: (() => void) | null = null;
+
     if (table) {
       // Create all possible connections with traffic impact colors
       const backgroundFeatures = [];
@@ -121,7 +124,7 @@ export function TableConnections({
       // Add hover effect for background lines
       let backgroundPopup: maplibregl.Popup | null = null;
 
-      const handleBackgroundMouseEnter = (e: maplibregl.MapLayerMouseEvent) => {
+      handleBackgroundMouseEnter = (e: maplibregl.MapLayerMouseEvent) => {
         if (!table || !e.features?.[0]) return;
 
         const feature = e.features[0];
@@ -161,7 +164,7 @@ export function TableConnections({
         }
       };
 
-      const handleBackgroundMouseLeave = () => {
+      handleBackgroundMouseLeave = () => {
         if (backgroundPopup) {
           backgroundPopup.remove();
           backgroundPopup = null;
@@ -176,7 +179,7 @@ export function TableConnections({
       if (map) {
         try {
           // Cleanup background event handlers
-          if (table) {
+          if (handleBackgroundMouseEnter && handleBackgroundMouseLeave) {
             map.off('mouseenter', backgroundSourceId + '-layer', handleBackgroundMouseEnter);
             map.off('mouseleave', backgroundSourceId + '-layer', handleBackgroundMouseLeave);
           }
@@ -243,7 +246,7 @@ export function TableConnections({
           }
         };
       })
-      .filter(Boolean);
+      .filter((feature): feature is NonNullable<typeof feature> => feature !== null);
 
     const geojson = {
       type: 'FeatureCollection' as const,
