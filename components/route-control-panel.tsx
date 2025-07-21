@@ -181,7 +181,7 @@ export function RouteControlPanel({
       return null;
     }
     
-    const url = new URL(window.location.origin);
+    const url = new URL(window.location.origin + '/route');
     url.searchParams.set('origin', `${originCoords[0]},${originCoords[1]}`);
     url.searchParams.set('destination', `${destinationCoords[0]},${destinationCoords[1]}`);
     
@@ -221,96 +221,183 @@ export function RouteControlPanel({
         <CardContent className="p-3 space-y-3">
         {/* Header with Solvice Maps Logo */}
         <div className="text-center pb-2">
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1">
             <h1 className="text-xl font-extrabold text-black tracking-wide">
               Solvice Maps
             </h1>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4" side="right" align="start">
-                <div className="space-y-4">
+            
+            {/* Action buttons group */}
+            <div className="flex items-center gap-1 ml-1">
+              {/* Help button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" side="right" align="start">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-sm mb-2">How to Use Solvice Maps</h3>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div>
+                          <strong>🗺️ Set Route Points:</strong>
+                          <ul className="ml-2 mt-1 space-y-1">
+                            <li>• Click on map to place origin/destination</li>
+                            <li>• Type addresses in the input fields</li>
+                            <li>• Drag markers to adjust locations</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <strong>🚗 Vehicle Options:</strong>
+                          <ul className="ml-2 mt-1 space-y-1">
+                            <li>• Car: Standard routing</li>
+                            <li>• Truck: Commercial vehicle restrictions</li>
+                            <li>• Bike: Bicycle-friendly routes</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <strong>📊 Features:</strong>
+                          <ul className="ml-2 mt-1 space-y-1">
+                            <li>• Speed profile chart with automatic traffic comparison</li>
+                            <li>• Turn-by-turn navigation instructions</li>
+                            <li>• Multiple routing engines (OSM, TomTom, Google)</li>
+                            <li>• Always-on real-time traffic data integration</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t pt-3">
+                      <h4 className="font-semibold text-sm mb-2">📎 Share Routes</h4>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>Share routes by copying the URL with parameters:</p>
+                        <div className="bg-muted p-2 rounded text-xs font-mono break-all">
+                          /route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+                        </div>
+                        <div className="space-y-1 mt-2">
+                          <div><code className="bg-muted px-1 rounded">origin</code> - Start coordinates (lng,lat)</div>
+                          <div><code className="bg-muted px-1 rounded">destination</code> - End coordinates (lng,lat)</div>
+                          <div><code className="bg-muted px-1 rounded">vehicle</code> - CAR | TRUCK | BIKE</div>
+                          <div><code className="bg-muted px-1 rounded">engine</code> - OSM | TOMTOM | GOOGLE</div>
+                          <div><code className="bg-muted px-1 rounded">steps</code> - true | false</div>
+                        </div>
+                        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                          <p className="text-xs font-medium text-blue-800 mb-1">Try it now:</p>
+                          <a
+                            href="/route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true"
+                            className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline font-mono break-all"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const url = new URL(window.location.origin + '/route');
+                              url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true";
+                              window.location.href = url.toString();
+                            }}
+                          >
+                            /route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t pt-3">
+                      <h4 className="font-semibold text-sm mb-2">🔧 Developer Tools</h4>
+                      <div className="text-xs text-muted-foreground">
+                        <p>Click the <Share className="inline h-3 w-3 mx-1" /> share or <Code className="inline h-3 w-3 mx-1" /> JSON buttons in the header for quick access to sharing and debugging tools.</p>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Share URL button */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <div>
-                    <h3 className="font-semibold text-sm mb-2">How to Use Solvice Maps</h3>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div>
-                        <strong>🗺️ Set Route Points:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Click on map to place origin/destination</li>
-                          <li>• Type addresses in the input fields</li>
-                          <li>• Drag markers to adjust locations</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <strong>🚗 Vehicle Options:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Car: Standard routing</li>
-                          <li>• Truck: Commercial vehicle restrictions</li>
-                          <li>• Bike: Bicycle-friendly routes</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <strong>📊 Features:</strong>
-                        <ul className="ml-2 mt-1 space-y-1">
-                          <li>• Speed profile chart with automatic traffic comparison</li>
-                          <li>• Turn-by-turn navigation instructions</li>
-                          <li>• Multiple routing engines (OSM, TomTom, Google)</li>
-                          <li>• Always-on real-time traffic data integration</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3">
-                    <h4 className="font-semibold text-sm mb-2">📎 Share Routes</h4>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p>Share routes by copying the URL with parameters:</p>
-                      <div className="bg-muted p-2 rounded text-xs font-mono break-all">
-                        ?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
-                      </div>
-                      <div className="space-y-1 mt-2">
-                        <div><code className="bg-muted px-1 rounded">origin</code> - Start coordinates (lng,lat)</div>
-                        <div><code className="bg-muted px-1 rounded">destination</code> - End coordinates (lng,lat)</div>
-                        <div><code className="bg-muted px-1 rounded">vehicle</code> - CAR | TRUCK | BIKE</div>
-                        <div><code className="bg-muted px-1 rounded">engine</code> - OSM | TOMTOM | GOOGLE</div>
-                        <div><code className="bg-muted px-1 rounded">steps</code> - true | false</div>
-                      </div>
-                      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                        <p className="text-xs font-medium text-blue-800 mb-1">Try it now:</p>
-                        <a
-                          href="?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true"
-                          className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline font-mono break-all"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const url = new URL(window.location.href);
-                            url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true";
-                            window.location.href = url.toString();
-                          }}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+                          onClick={copyShareUrl}
                         >
-                          ?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
-                        </a>
+                          <Share className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" align="center">
+                        <p>Share route URL</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-3" side="right" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Share Route</h4>
+                    {getShareUrl() ? (
+                      <div className="space-y-2">
+                        <div className="text-xs bg-muted p-2 rounded overflow-auto max-h-32 font-mono break-all">
+                          {getShareUrl()}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Click the share button to copy this URL to clipboard. Anyone with this link can view your route with the same settings.
+                        </p>
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Set both origin and destination to generate a shareable URL
+                      </p>
+                    )}
                   </div>
-                  
-                  <div className="border-t pt-3">
-                    <h4 className="font-semibold text-sm mb-2">🔧 Developer Tools</h4>
-                    <div className="text-xs text-muted-foreground">
-                      <p>Click the <Code className="inline h-3 w-3 mx-1" /> icon to copy the API request JSON for debugging or integration.</p>
-                    </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Debug: Copy request JSON */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+                          onClick={copyRequestJson}
+                        >
+                          <Code className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" align="center">
+                        <p>Copy API request JSON</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-3" side="right" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Request JSON</h4>
+                    {getRequestJson() ? (
+                      <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-64 font-mono">
+                        {JSON.stringify(getRequestJson(), null, 2)}
+                      </pre>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Set both origin and destination to see request JSON
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Click the button to copy to clipboard
+                    </p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
           <div className="text-xs text-muted-foreground">
             <a 
@@ -501,98 +588,12 @@ export function RouteControlPanel({
 
 
 
-        {/* Instructions and Action buttons */}
-        <div className="flex justify-between items-center pt-1">
-          {!hasRoute && !loading && !error && (
-            <div className="text-xs text-muted-foreground flex-1">
-              Click on the map to place markers or enter addresses above
-            </div>
-          )}
-          
-          <div className="flex items-center gap-1 ml-2">
-            {/* Share URL button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200"
-                        onClick={copyShareUrl}
-                      >
-                        <Share className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" align="end">
-                      <p>Share route URL</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-3" side="left" align="end">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Share Route</h4>
-                  {getShareUrl() ? (
-                    <div className="space-y-2">
-                      <div className="text-xs bg-muted p-2 rounded overflow-auto max-h-32 font-mono break-all">
-                        {getShareUrl()}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Click the share button to copy this URL to clipboard. Anyone with this link can view your route with the same settings.
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Set both origin and destination to generate a shareable URL
-                    </p>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            {/* Debug: Copy request JSON with formatted preview */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-50 hover:opacity-100 hover:bg-muted/50 transition-all duration-200"
-                        onClick={copyRequestJson}
-                      >
-                        <Code className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" align="end">
-                      <p>View/Copy request JSON</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-3" side="left" align="end">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Request JSON</h4>
-                  {getRequestJson() ? (
-                    <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-64 font-mono">
-                      {JSON.stringify(getRequestJson(), null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Set both origin and destination to see request JSON
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Click the button to copy to clipboard
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
+        {/* Instructions prompt */}
+        {!hasRoute && !loading && !error && (
+          <div className="text-xs text-muted-foreground text-center pt-1">
+            Click on the map to place markers or enter addresses above
           </div>
-        </div>
+        )}
         
         {/* Turn-by-turn instructions that roll out */}
         {showInstructions && routeConfig.steps && (

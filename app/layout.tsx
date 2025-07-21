@@ -32,7 +32,7 @@ export default function RootLayout({
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
-        <Toaster />
+        <Toaster position="top-right" />
       </body>
     </html>
   );

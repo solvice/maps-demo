@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Complete User Journey - Maps Demo', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
-    await page.goto('/');
+    await page.goto('/route');
     
     // Wait for the map to load
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });

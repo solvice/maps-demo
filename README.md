@@ -69,7 +69,7 @@ GOOGLE_MAPS_API_KEY=your_google_places_api_key_here
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+Open [http://localhost:3000](http://localhost:3000) to see the application menu, or go directly to [http://localhost:3000/route](http://localhost:3000/route) for the route planning demo.
 
 ### 4. Basic Usage
 1. **Place Markers**: Click on the map to set origin (green) and destination (red)
@@ -81,7 +81,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 ### 5. URL Route Sharing
 Share routes using URL parameters:
 ```
-https://maps-demo.solvice.io/?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+https://maps-demo.solvice.io/route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
 ```
 
 **Supported Parameters:**
@@ -144,7 +144,9 @@ pnpm lint:fix      # Auto-fix linting issues
 ```
 maps-demo/
 ├── app/                    # Next.js App Router
-│   ├── page.tsx           # Main application component
+│   ├── page.tsx           # Demo navigation homepage
+│   ├── route/             # Route planning demo
+│   │   └── page.tsx       # Main route planning component
 │   ├── layout.tsx         # Root layout
 │   └── api/route/         # Secure API endpoints
 ├── components/            # React components

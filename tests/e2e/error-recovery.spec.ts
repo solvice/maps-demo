@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Error Recovery and Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     await page.waitForTimeout(1000);
   });

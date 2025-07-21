@@ -3,7 +3,7 @@ import { test, expect, devices } from '@playwright/test';
 test.describe('Mobile Workflow Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
-    await page.goto('/');
+    await page.goto('/route');
     
     // Wait for the map to load
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
@@ -16,7 +16,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     // Test touch interactions
@@ -57,7 +57,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     // Test Android-specific interactions
@@ -100,7 +100,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     // Place markers in portrait
@@ -142,7 +142,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     // Focus input to show virtual keyboard
@@ -179,7 +179,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     // Check that config button has adequate touch target
@@ -209,7 +209,7 @@ test.describe('Mobile Workflow Tests', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('/');
+    await page.goto('/route');
     await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
     
     const mapContainer = page.locator('[data-testid="map-container"]');

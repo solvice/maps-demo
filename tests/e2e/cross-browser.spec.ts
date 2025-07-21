@@ -6,7 +6,7 @@ test.describe('Cross-Browser Compatibility', () => {
   for (const browserName of browsers) {
     test.describe(`${browserName} browser`, () => {
       test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('/route');
         await page.waitForSelector('[data-testid="map-container"]', { state: 'visible' });
         await page.waitForTimeout(1000);
       });
