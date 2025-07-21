@@ -38,7 +38,7 @@ export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: De
           {/* Map Controls - bottom right */}
           <MapControls 
             mapStyle={mapStyle} 
-            onStyleChange={setMapStyle} 
+            onMapStyleChange={setMapStyle} 
           />
 
           {/* Map Content - passed as children */}
