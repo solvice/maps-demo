@@ -128,6 +128,30 @@ export function findClosestCoordinate(
 export const GHENT_COORDINATES: Coordinates = [3.7174, 51.0543];
 
 /**
+ * Calculates bounding box for an array of coordinates
+ * Returns [[minLng, minLat], [maxLng, maxLat]] format compatible with MapLibre fitBounds
+ */
+export function getBounds(coordinates: Coordinates[]): [[number, number], [number, number]] {
+  if (coordinates.length === 0) {
+    throw new Error('Cannot calculate bounds for empty coordinate array');
+  }
+  
+  let minLng = coordinates[0][0];
+  let minLat = coordinates[0][1];
+  let maxLng = coordinates[0][0];
+  let maxLat = coordinates[0][1];
+  
+  coordinates.forEach(([lng, lat]) => {
+    minLng = Math.min(minLng, lng);
+    minLat = Math.min(minLat, lat);
+    maxLng = Math.max(maxLng, lng);
+    maxLat = Math.max(maxLat, lat);
+  });
+  
+  return [[minLng, minLat], [maxLng, maxLat]];
+}
+
+/**
  * Default zoom levels for different map contexts
  */
 export const DEFAULT_ZOOM = {

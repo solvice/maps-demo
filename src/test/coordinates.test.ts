@@ -8,6 +8,7 @@ import {
   formatCoordinates,
   calculateDistance,
   findClosestCoordinate,
+  getBounds,
   GHENT_COORDINATES,
 } from '../../lib/coordinates'
 
@@ -166,6 +167,45 @@ describe('Coordinate Utilities', () => {
       expect(result).not.toBeNull()
       expect(result!.coordinate).toEqual(brussels)
       expect(result!.index).toBe(1)
+    })
+  })
+
+  describe('getBounds', () => {
+    it('should calculate bounds for single coordinate', () => {
+      const coords = [[3.7174, 51.0543]] as [number, number][]
+      const bounds = getBounds(coords)
+      
+      expect(bounds).toEqual([[3.7174, 51.0543], [3.7174, 51.0543]])
+    })
+
+    it('should calculate bounds for multiple coordinates', () => {
+      const coords = [
+        [3.7174, 51.0543], // Ghent
+        [4.3517, 50.8476], // Brussels
+        [4.4024, 51.2194]  // Antwerp
+      ] as [number, number][]
+      
+      const bounds = getBounds(coords)
+      const [[minLng, minLat], [maxLng, maxLat]] = bounds
+      
+      expect(minLng).toBe(3.7174) // Westernmost
+      expect(maxLng).toBe(4.4024) // Easternmost
+      expect(minLat).toBe(50.8476) // Southernmost
+      expect(maxLat).toBe(51.2194) // Northernmost
+    })
+
+    it('should throw error for empty coordinate array', () => {
+      expect(() => getBounds([])).toThrow('Cannot calculate bounds for empty coordinate array')
+    })
+
+    it('should handle negative coordinates', () => {
+      const coords = [
+        [-10, -20],
+        [10, 20]
+      ] as [number, number][]
+      
+      const bounds = getBounds(coords)
+      expect(bounds).toEqual([[-10, -20], [10, 20]])
     })
   })
 

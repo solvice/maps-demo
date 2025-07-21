@@ -8,6 +8,7 @@ import { MapControls } from '@/components/map-controls';
 import { SpeedProfile } from '@/components/elevation-profile';
 import { StepHighlight } from '@/components/step-highlight';
 import { RouteConfig } from '@/components/route-config';
+import { RouteManager } from '@/components/route-manager';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
 import { useState, useEffect, useRef } from 'react';
@@ -29,7 +30,7 @@ export default function Home() {
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
   const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
-    alternatives: 1,
+    alternatives: 2,
     steps: false,
     annotations: ['distance', 'duration'],
     geometries: 'polyline',
@@ -257,8 +258,11 @@ export default function Home() {
   // Handle route config change
   const handleRouteConfigChange = (newConfig: RouteConfig) => {
     // Always set departureTime to current time when any config changes
+    // Force geometries to always be 'polyline' and alternatives to always be 2
     const configWithTime = {
       ...newConfig,
+      geometries: 'polyline' as const,
+      alternatives: 2,
       departureTime: new Date().toISOString()
     };
     
@@ -335,6 +339,11 @@ export default function Home() {
           route={route} 
           geometryFormat={routeConfig.geometries} 
           highlightedRoute={hoveredRouteIndex}
+        />
+        <RouteManager 
+          route={route} 
+          geometryFormat={routeConfig.geometries}
+          autoZoom={true}
         />
         <StepHighlight 
           geometry={highlightedStepGeometry}
