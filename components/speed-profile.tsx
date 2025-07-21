@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { RouteResponse } from '@/lib/solvice-api';
 import { formatDistance } from '@/lib/format';
@@ -306,23 +306,39 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                 domain={['dataMin - 5', 'dataMax + 5']}
               />
               <ChartTooltip
-                content={<ChartTooltipContent 
-                  labelFormatter={(value) => {
-                    const numValue = Number(value);
-                    if (isNaN(numValue)) {
-                      return 'Distance: 0 m';
-                    }
-                    return `Distance: ${formatDistance(numValue)}`;
-                  }}
-                  formatter={(value, name) => {
-                    const numValue = Number(value);
-                    const roundedValue = isNaN(numValue) ? 0 : Math.round(numValue);
-                    return [
-                      `${roundedValue} km/h`, 
-                      name === 'speed' ? 'Regular Speed' : 'Traffic Speed'
-                    ];
-                  }}
-                />}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const numValue = Number(label);
+                    const distanceLabel = isNaN(numValue) ? '0 m' : formatDistance(numValue);
+                    
+                    return (
+                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                        <p className="text-sm font-medium mb-2">{`Distance: ${distanceLabel}`}</p>
+                        <div className="space-y-1">
+                          {payload.map((entry, index) => {
+                            const speed = Number(entry.value);
+                            const roundedSpeed = isNaN(speed) ? 0 : Math.round(speed);
+                            const isTraffic = entry.dataKey === 'trafficSpeed';
+                            const color = isTraffic ? '#f97316' : '#3b82f6'; // Orange for traffic, blue for regular
+                            const label = isTraffic ? 'Traffic Speed' : 'Regular Speed';
+                            
+                            return (
+                              <div key={index} className="flex items-center gap-2 text-sm">
+                                <div 
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: color }}
+                                />
+                                <span className="text-muted-foreground">{label}:</span>
+                                <span className="font-medium">{roundedSpeed} km/h</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
               />
               <Area
                 type="monotone"
