@@ -42,6 +42,9 @@ function extractSpeedData(route: RouteResponse, selectedRouteIndex: number, rout
     distanceLabel: string; 
     stepIndex: number; 
     geometry?: string;
+    locationName?: string;
+    routeRef?: string;
+    destinations?: string;
   }> = [];
   let cumulativeDistance = 0;
   let globalStepIndex = 0;
@@ -65,7 +68,10 @@ function extractSpeedData(route: RouteResponse, selectedRouteIndex: number, rout
             trafficSpeed: routeType === 'traffic' ? Math.round(speedKmh) : undefined,
             distanceLabel: formatDistance(cumulativeDistance),
             stepIndex: globalStepIndex,
-            geometry: step.geometry
+            geometry: step.geometry,
+            locationName: step.name,
+            routeRef: step.ref,
+            destinations: step.destinations
           };
           
           speedData.push(dataPoint);
@@ -215,18 +221,48 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
     return null;
   }
 
+  // Helper function to find closest geometry data point
+  function findClosestGeometry(speedData: Array<{ distance: number; geometry?: string; stepIndex: number; locationName?: string; routeRef?: string; destinations?: string }>, targetDistance: number): { geometry?: string; stepIndex: number; locationName?: string; routeRef?: string; destinations?: string } {
+    if (speedData.length === 0) return { geometry: undefined, stepIndex: 0, locationName: undefined, routeRef: undefined, destinations: undefined };
+    
+    let closest = speedData[0];
+    let minDistance = Math.abs(speedData[0].distance - targetDistance);
+    
+    for (const point of speedData) {
+      const dist = Math.abs(point.distance - targetDistance);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = point;
+      }
+    }
+    
+    return { 
+      geometry: closest.geometry, 
+      stepIndex: closest.stepIndex,
+      locationName: closest.locationName,
+      routeRef: closest.routeRef,
+      destinations: closest.destinations
+    };
+  }
+
   // Resample both routes to the common distance grid
   const combinedData = distanceGrid.map(distance => {
     const regularSpeed = interpolateSpeedAtDistance(regularSpeedData, distance);
     const trafficSpeed = interpolateSpeedAtDistance(trafficSpeedData, distance);
+    
+    // Find the closest original data point to preserve geometry information
+    const closestData = findClosestGeometry(regularSpeedData, distance);
     
     return {
       distance,
       speed: regularSpeed,
       trafficSpeed,
       distanceLabel: formatDistance(distance),
-      stepIndex: Math.floor(distance / sampleInterval), // Synthetic step index
-      geometry: undefined // No specific geometry for interpolated points
+      stepIndex: closestData.stepIndex,
+      geometry: closestData.geometry,
+      locationName: closestData.locationName,
+      routeRef: closestData.routeRef,
+      destinations: closestData.destinations
     };
   });
 
@@ -305,6 +341,7 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                 domain={['dataMin - 5', 'dataMax + 5']}
               />
               <ChartTooltip
+                position={{ x: undefined, y: -25 }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const numValue = Number(label);
@@ -313,11 +350,30 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                     // Get the data point from the first payload entry
                     const dataPoint = payload[0]?.payload;
                     const geometry = dataPoint?.geometry;
+                    const locationName = dataPoint?.locationName;
+                    const routeRef = dataPoint?.routeRef;
+                    const destinations = dataPoint?.destinations;
+                    
+                    // Build location display string
+                    const locationParts = [];
+                    if (locationName) locationParts.push(locationName);
+                    if (routeRef) locationParts.push(`(${routeRef})`);
+                    const locationDisplay = locationParts.join(' ');
                     
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3 max-w-md">
-                        <p className="text-sm font-medium mb-2">{`Distance: ${distanceLabel}`}</p>
-                        <div className="space-y-1 mb-3">
+                      <div className="bg-background border rounded-lg shadow-lg p-2 max-w-xs">
+                        <p className="text-xs font-medium mb-1">{`Distance: ${distanceLabel}`}</p>
+                        
+                        {locationDisplay && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium truncate">{locationDisplay}</p>
+                            {destinations && (
+                              <p className="text-xs text-muted-foreground truncate">→ {destinations}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="space-y-1 mb-2">
                           {payload.map((entry, index) => {
                             const speed = Number(entry.value);
                             const roundedSpeed = isNaN(speed) ? 0 : Math.round(speed);
@@ -326,26 +382,17 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                             const label = isTraffic ? 'Traffic Speed' : 'Regular Speed';
                             
                             return (
-                              <div key={index} className="flex items-center gap-2 text-sm">
+                              <div key={index} className="flex items-center gap-1 text-xs">
                                 <div 
                                   className="w-2 h-2 rounded-full flex-shrink-0"
                                   style={{ backgroundColor: color }}
                                 />
-                                <span className="text-muted-foreground">{label}:</span>
+                                <span className="text-muted-foreground">{isTraffic ? 'Traffic' : 'Speed'}:</span>
                                 <span className="font-medium">{roundedSpeed} km/h</span>
                               </div>
                             );
                           })}
                         </div>
-                        
-                        {geometry && (
-                          <div className="border-t pt-2 mt-2">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Geometry:</p>
-                            <div className="text-xs font-mono bg-muted p-2 rounded max-h-20 overflow-y-auto break-all">
-                              {geometry}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
                   }
