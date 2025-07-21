@@ -317,17 +317,29 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
               }}
             >
               <defs>
-                <linearGradient id="speedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9}/>
-                  <stop offset="20%" stopColor="#3b82f6" stopOpacity={0.7}/>
-                  <stop offset="60%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                <linearGradient id="fillSpeed" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-speed)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-speed)"
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
-                <linearGradient id="trafficSpeedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f97316" stopOpacity={0.9}/>
-                  <stop offset="20%" stopColor="#f97316" stopOpacity={0.7}/>
-                  <stop offset="60%" stopColor="#f97316" stopOpacity={0.4}/>
-                  <stop offset="100%" stopColor="#f97316" stopOpacity={0.05}/>
+                <linearGradient id="fillTrafficSpeed" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-trafficSpeed)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-trafficSpeed)"
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
               </defs>
               <XAxis 
@@ -406,18 +418,18 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
               <Area
                 type="monotone"
                 dataKey="speed"
-                stroke="#3b82f6"
+                stroke="var(--color-speed)"
                 strokeWidth={2}
-                fill="url(#speedGradient)"
+                fill="url(#fillSpeed)"
                 connectNulls={false}
               />
               {trafficRoute && (
                 <Area
                   type="monotone"
                   dataKey="trafficSpeed"
-                  stroke="#f97316"
+                  stroke="var(--color-trafficSpeed)"
                   strokeWidth={2}
-                  fill="url(#trafficSpeedGradient)"
+                  fill="url(#fillTrafficSpeed)"
                   connectNulls={false}
                 />
               )}
