@@ -168,7 +168,6 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   }
 
   console.log(`📏 Distance grid: 0 to ${maxDistance}m with ${distanceGrid.length} points (${sampleInterval}m intervals)`);
-  console.log('📏 First few distance grid points:', distanceGrid.slice(0, 5));
 
   // Helper function to interpolate speed at a given distance
   function interpolateSpeedAtDistance(speedData: Array<{ distance: number; speed?: number; trafficSpeed?: number }>, targetDistance: number): number | null {
@@ -311,10 +310,14 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                     const numValue = Number(label);
                     const distanceLabel = isNaN(numValue) ? '0 m' : formatDistance(numValue);
                     
+                    // Get the data point from the first payload entry
+                    const dataPoint = payload[0]?.payload;
+                    const geometry = dataPoint?.geometry;
+                    
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3">
+                      <div className="bg-background border rounded-lg shadow-lg p-3 max-w-md">
                         <p className="text-sm font-medium mb-2">{`Distance: ${distanceLabel}`}</p>
-                        <div className="space-y-1">
+                        <div className="space-y-1 mb-3">
                           {payload.map((entry, index) => {
                             const speed = Number(entry.value);
                             const roundedSpeed = isNaN(speed) ? 0 : Math.round(speed);
@@ -334,6 +337,15 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                             );
                           })}
                         </div>
+                        
+                        {geometry && (
+                          <div className="border-t pt-2 mt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Geometry:</p>
+                            <div className="text-xs font-mono bg-muted p-2 rounded max-h-20 overflow-y-auto break-all">
+                              {geometry}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   }
