@@ -68,9 +68,7 @@ function HomeContent() {
     
     const originParam = searchParams.get('origin');
     const destParam = searchParams.get('destination');
-    const vehicleParam = searchParams.get('vehicle');
-    const engineParam = searchParams.get('engine');
-    const stepsParam = searchParams.get('steps');
+    const departureTimeParam = searchParams.get('departureTime');
     
     if (originParam) {
       try {
@@ -106,13 +104,18 @@ function HomeContent() {
       }
     }
     
-    if (vehicleParam || engineParam || stepsParam) {
-      setRouteConfig(prev => ({
-        ...prev,
-        ...(vehicleParam && { vehicleType: vehicleParam as RouteConfig['vehicleType'] }),
-        ...(engineParam && { routingEngine: engineParam as RouteConfig['routingEngine'] }),
-        ...(stepsParam && { steps: stepsParam === 'true' })
-      }));
+    if (departureTimeParam) {
+      try {
+        const departureTime = new Date(departureTimeParam);
+        if (!isNaN(departureTime.getTime())) {
+          setRouteConfig(prev => ({
+            ...prev,
+            departureTime: departureTime.toISOString()
+          }));
+        }
+      } catch (e) {
+        console.error('Invalid departureTime parameter:', e);
+      }
     }
     
     setIsInitialized(true);
@@ -130,14 +133,8 @@ function HomeContent() {
     if (destination) {
       params.set('destination', `${destination[0]},${destination[1]}`);
     }
-    if (routeConfig.vehicleType && routeConfig.vehicleType !== 'CAR') {
-      params.set('vehicle', routeConfig.vehicleType);
-    }
-    if (routeConfig.routingEngine && routeConfig.routingEngine !== 'OSM') {
-      params.set('engine', routeConfig.routingEngine);
-    }
-    if (routeConfig.steps) {
-      params.set('steps', 'true');
+    if (routeConfig.departureTime) {
+      params.set('departureTime', routeConfig.departureTime);
     }
     
     const newUrl = params.toString() ? `?${params.toString()}` : '';
@@ -146,7 +143,7 @@ function HomeContent() {
     if (newUrl !== currentUrl) {
       router.replace(newUrl, { scroll: false });
     }
-  }, [origin, destination, routeConfig.vehicleType, routeConfig.routingEngine, routeConfig.steps, router, isInitialized]);
+  }, [origin, destination, routeConfig.departureTime, router, isInitialized]);
   
   // Auto-zoom to route when calculated
   useAutoZoom(route, { geometryFormat: routeConfig.geometries });
@@ -171,7 +168,6 @@ function HomeContent() {
         handleSetOrigin(coords);
         setDestination(null);
         setDestinationText('');
-        toast.success('Origin moved! Click again for destination.');
         return 1; // Reset to "first click" state
       }
     });

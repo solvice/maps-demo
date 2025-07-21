@@ -185,14 +185,8 @@ export function RouteControlPanel({
     url.searchParams.set('origin', `${originCoords[0]},${originCoords[1]}`);
     url.searchParams.set('destination', `${destinationCoords[0]},${destinationCoords[1]}`);
     
-    if (routeConfig.vehicleType && routeConfig.vehicleType !== 'CAR') {
-      url.searchParams.set('vehicle', routeConfig.vehicleType);
-    }
-    if (routeConfig.routingEngine && routeConfig.routingEngine !== 'OSM') {
-      url.searchParams.set('engine', routeConfig.routingEngine);
-    }
-    if (routeConfig.steps) {
-      url.searchParams.set('steps', 'true');
+    if (routeConfig.departureTime) {
+      url.searchParams.set('departureTime', routeConfig.departureTime);
     }
     
     return url.toString();
@@ -279,28 +273,26 @@ export function RouteControlPanel({
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p>Share routes by copying the URL with parameters:</p>
                         <div className="bg-muted p-2 rounded text-xs font-mono break-all">
-                          /route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+                          /route?origin=3.7174,51.0543&destination=3.7274,51.0643&departureTime=2024-01-01T12:00:00.000Z
                         </div>
                         <div className="space-y-1 mt-2">
                           <div><code className="bg-muted px-1 rounded">origin</code> - Start coordinates (lng,lat)</div>
                           <div><code className="bg-muted px-1 rounded">destination</code> - End coordinates (lng,lat)</div>
-                          <div><code className="bg-muted px-1 rounded">vehicle</code> - CAR | TRUCK | BIKE</div>
-                          <div><code className="bg-muted px-1 rounded">engine</code> - OSM | TOMTOM | GOOGLE</div>
-                          <div><code className="bg-muted px-1 rounded">steps</code> - true | false</div>
+                          <div><code className="bg-muted px-1 rounded">departureTime</code> - ISO timestamp (optional)</div>
                         </div>
                         <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
                           <p className="text-xs font-medium text-blue-800 mb-1">Try it now:</p>
                           <a
-                            href="/route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true"
+                            href="/route?origin=3.7174,51.0543&destination=3.7274,51.0643"
                             className="text-xs text-blue-600 hover:text-blue-800 underline hover:no-underline font-mono break-all"
                             onClick={(e) => {
                               e.preventDefault();
                               const url = new URL(window.location.origin + '/route');
-                              url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true";
+                              url.search = "origin=3.7174,51.0543&destination=3.7274,51.0643";
                               window.location.href = url.toString();
                             }}
                           >
-                            /route?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+                            /route?origin=3.7174,51.0543&destination=3.7274,51.0643
                           </a>
                         </div>
                       </div>
