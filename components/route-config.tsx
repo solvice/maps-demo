@@ -51,7 +51,7 @@ interface RouteConfigProps {
 }
 
 const DEFAULT_CONFIG: RouteConfig = {
-  alternatives: 1,
+  alternatives: 2,
   steps: false,
   annotations: [],
   geometries: 'polyline',
@@ -117,18 +117,6 @@ export function RouteConfigPane({ config, onConfigChange }: RouteConfigProps) {
               <CardTitle className="text-lg">Basic Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="alternatives">Alternative Routes</Label>
-                <Input
-                  id="alternatives"
-                  type="number"
-                  min="0"
-                  max="3"
-                  value={config.alternatives || 1}
-                  onChange={(e) => updateConfig({ alternatives: parseInt(e.target.value) || 1 })}
-                  placeholder="Number of alternative routes"
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="vehicle-type">Vehicle Type</Label>
@@ -192,22 +180,6 @@ export function RouteConfigPane({ config, onConfigChange }: RouteConfigProps) {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="geometries">Geometry Format</Label>
-                <Select
-                  value={config.geometries || 'polyline'}
-                  onValueChange={(value) => updateConfig({ geometries: value as RouteConfig['geometries'] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select geometry format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="polyline">Polyline</SelectItem>
-                    <SelectItem value="geojson">GeoJSON</SelectItem>
-                    <SelectItem value="polyline6">Polyline6</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="snapping">Snapping</Label>

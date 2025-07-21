@@ -8,10 +8,10 @@
     - radio "Truck"
     - radio "Bike"
   - text: Origin
-  - textbox "Enter origin"
-  - text: Destination
+  - textbox "Enter origin": InvalidLocationThatDoesNotExist123456
+  - text: "Belgium Confidence: 100% Brussels, Belgium Confidence: 90% Antwerp, Belgium Confidence: 80% Destination"
   - textbox "Enter destination"
-  - text: Click on the map to place markers or enter addresses above
+  - text: "Error: Address not found"
   - button
   - button
   - button

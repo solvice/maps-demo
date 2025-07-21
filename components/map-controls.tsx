@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Navigation, Palette, Route, Settings, Car } from 'lucide-react';
+import { Navigation, Palette } from 'lucide-react';
 import { RouteConfig } from './route-control-panel';
 
 interface MapControlsProps {
@@ -52,43 +52,7 @@ export function MapControls({ routeConfig, onRouteConfigChange, mapStyle, onMapS
           </Tooltip>
         </Card>
 
-        {/* Alternative Routes Control */}
-        <Card className="p-1 shadow-lg">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={(routeConfig.alternatives || 1) === 2 ? 'default' : 'outline'}
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => updateConfig({ alternatives: (routeConfig.alternatives || 1) === 1 ? 2 : 1 })}
-              >
-                <Route className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{(routeConfig.alternatives || 1) === 1 ? 'Show alternative routes' : 'Show main route only'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </Card>
 
-        {/* Geometry Format Control */}
-        <Card className="p-1 shadow-lg">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={(routeConfig.geometries || 'polyline') === 'polyline6' ? 'default' : 'outline'}
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => updateConfig({ geometries: (routeConfig.geometries || 'polyline') === 'polyline' ? 'polyline6' : 'polyline' })}
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{(routeConfig.geometries || 'polyline') === 'polyline' ? 'Switch to high precision (polyline6)' : 'Switch to standard precision (polyline)'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </Card>
 
         {/* Steps Toggle Control */}
         <Card className="p-1 shadow-lg">
@@ -109,27 +73,6 @@ export function MapControls({ routeConfig, onRouteConfigChange, mapStyle, onMapS
           </Tooltip>
         </Card>
 
-        {/* Traffic Toggle Control */}
-        <Card className="p-1 shadow-lg">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={routeConfig.routingEngine === 'TOMTOM' ? 'default' : 'outline'}
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => updateConfig({ 
-                  routingEngine: routeConfig.routingEngine === 'OSM' ? 'TOMTOM' : 'OSM',
-                  departureTime: new Date().toISOString()
-                })}
-              >
-                <Car className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{routeConfig.routingEngine === 'TOMTOM' ? 'Disable traffic (switch to OSM)' : 'Enable traffic (switch to TomTom)'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </Card>
       </div>
     </TooltipProvider>
   );

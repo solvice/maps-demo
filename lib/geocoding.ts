@@ -1,12 +1,10 @@
 import { Coordinates, isValidCoordinates } from './coordinates';
 
-// For now, we'll use a simple mock geocoding service
-// In a real implementation, this would use a service like Nominatim, Google Geocoding API, etc.
-
 interface GeocodingResult {
   coordinates: Coordinates;
   address: string;
   confidence: number;
+  placeId?: string;
 }
 
 /**
@@ -18,28 +16,64 @@ export async function reverseGeocode(coordinates: Coordinates): Promise<string> 
   }
 
   try {
-    // For now, return a mock address based on known coordinates
-    // In production, this would call a real geocoding service
     const [lng, lat] = coordinates;
-    
-    // Mock some known locations
-    if (Math.abs(lng - 4.3517) < 0.01 && Math.abs(lat - 50.8503) < 0.01) {
-      return 'Brussels, Belgium';
-    }
-    if (Math.abs(lng - 4.4025) < 0.01 && Math.abs(lat - 51.2194) < 0.01) {
-      return 'Antwerp, Belgium';
-    }
-    if (Math.abs(lng - 3.7174) < 0.01 && Math.abs(lat - 51.0543) < 0.01) {
-      return 'Ghent, Belgium';
-    }
-    
-    // Fallback to coordinate display
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    const result = await reverseGeocodeCoordinates(coordinates);
+    return result || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   } catch (error) {
     console.error('Reverse geocoding failed:', error);
     // Fallback to coordinate display
     const [lng, lat] = coordinates;
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+
+/**
+ * Google Geocoding API reverse geocoding implementation
+ */
+export async function reverseGeocodeCoordinates(coordinates: Coordinates): Promise<string | null> {
+  if (!coordinates || !Array.isArray(coordinates)) {
+    throw new Error('Coordinates are required');
+  }
+  
+  if (coordinates.length !== 2) {
+    throw new Error('Coordinates must be an array of [lng, lat]');
+  }
+
+  if (!isValidCoordinates(coordinates)) {
+    const [lng, lat] = coordinates;
+    if (lng < -180 || lng > 180) {
+      throw new Error('Invalid longitude: must be between -180 and 180');
+    }
+    if (lat < -90 || lat > 90) {
+      throw new Error('Invalid latitude: must be between -90 and 90');
+    }
+    throw new Error('Coordinates must be an array of [lng, lat]');
+  }
+
+  try {
+    const response = await fetch('/api/geocoding', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'reverse',
+        coordinates
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to reverse geocode coordinates');
+    }
+
+    const data = await response.json();
+    return data.address;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred during reverse geocoding');
   }
 }
 
@@ -68,35 +102,49 @@ export async function forwardGeocode(address: string): Promise<Coordinates> {
   }
 
   try {
-    // For now, return mock coordinates based on known addresses
-    // In production, this would call a real geocoding service
-    const normalizedAddress = address.toLowerCase().trim();
-    
-    // Mock some known addresses
-    if (normalizedAddress.includes('brussels')) {
-      return [4.3517, 50.8503];
+    const result = await geocodeAddress(address);
+    if (result) {
+      return result;
     }
-    if (normalizedAddress.includes('antwerp')) {
-      return [4.4025, 51.2194];
-    }
-    if (normalizedAddress.includes('ghent')) {
-      return [3.7174, 51.0543];
-    }
-    
-    // Try to parse coordinate string (lat, lng format)
-    const coordMatch = normalizedAddress.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
-    if (coordMatch) {
-      const lat = parseFloat(coordMatch[1]);
-      const lng = parseFloat(coordMatch[2]);
-      if (isValidCoordinates([lng, lat])) {
-        return [lng, lat];
-      }
-    }
-    
     throw new Error('Address not found');
   } catch (error) {
     console.error('Forward geocoding failed:', error);
     throw error;
+  }
+}
+
+/**
+ * Google Geocoding API forward geocoding implementation
+ */
+export async function geocodeAddress(address: string): Promise<Coordinates | null> {
+  if (!address || typeof address !== 'string' || address.trim().length === 0) {
+    throw new Error('Address is required');
+  }
+
+  try {
+    const response = await fetch('/api/geocoding', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'forward',
+        query: address.trim()
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to geocode address');
+    }
+
+    const data = await response.json();
+    return data.coordinates;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred during geocoding');
   }
 }
 
@@ -121,13 +169,29 @@ export async function searchAddresses(query: string): Promise<GeocodingResult[]>
   }
 
   try {
-    // Simulate potential service failure for testing
-    if (query.toLowerCase().includes('failservice')) {
-      throw new Error('Geocoding service unavailable');
+    const response = await fetch('/api/geocoding', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'autocomplete',
+        query: query.trim()
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to search addresses');
     }
 
-    // For now, return mock search results
-    // In production, this would call a real geocoding service with search/autocomplete
+    const data = await response.json();
+    return data.predictions || [];
+  } catch (error) {
+    console.error('Address search failed:', error);
+    
+    // Fallback to mock data if Google API fails
+    console.log('Falling back to mock geocoding data');
     const normalizedQuery = query.toLowerCase().trim();
     const results: GeocodingResult[] = [];
     
@@ -156,11 +220,5 @@ export async function searchAddresses(query: string): Promise<GeocodingResult[]>
     }
     
     return results.sort((a, b) => b.confidence - a.confidence);
-  } catch (error) {
-    console.error('Address search failed:', error);
-    if (error instanceof Error && error.message === 'Geocoding service unavailable') {
-      throw error; // Re-throw service errors for proper handling
-    }
-    return [];
   }
 }

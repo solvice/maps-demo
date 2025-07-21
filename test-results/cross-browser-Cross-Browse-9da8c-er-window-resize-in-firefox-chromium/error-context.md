@@ -8,10 +8,10 @@
     - radio "Truck"
     - radio "Bike"
   - text: Origin
-  - textbox "Enter origin"
+  - textbox "Enter origin": 3M8M+26 Ghent, Belgium
   - text: Destination
-  - textbox "Enter destination"
-  - text: Click on the map to place markers or enter addresses above
+  - textbox "Enter destination": Leiekaai 330, 9000 Gent, Belgium
+  - text: 6 min 2.7 km
   - button
   - button
   - button

@@ -8,10 +8,10 @@
     - radio "Truck"
     - radio "Bike"
   - text: Origin
-  - textbox "Enter origin"
+  - textbox "Enter origin": 51.0608, 3.6762
   - text: Destination
-  - textbox "Enter destination"
-  - text: Click on the map to place markers or enter addresses above
+  - textbox "Enter destination": Noorderlaan 9, 9000 Gent, Belgium
+  - text: 7 min 4.1 km 11 min 6.2 km
   - button
   - button
   - button
