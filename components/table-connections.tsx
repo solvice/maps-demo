@@ -121,7 +121,7 @@ export function TableConnections({
       // Add hover effect for background lines
       let backgroundPopup: maplibregl.Popup | null = null;
 
-      const handleBackgroundMouseEnter = (e: maplibregl.MapMouseEvent) => {
+      const handleBackgroundMouseEnter = (e: maplibregl.MapLayerMouseEvent) => {
         if (!table || !e.features?.[0]) return;
 
         const feature = e.features[0];
@@ -177,8 +177,8 @@ export function TableConnections({
         try {
           // Cleanup background event handlers
           if (table) {
-            map.off('mouseenter', backgroundSourceId + '-layer');
-            map.off('mouseleave', backgroundSourceId + '-layer');
+            map.off('mouseenter', backgroundSourceId + '-layer', handleBackgroundMouseEnter);
+            map.off('mouseleave', backgroundSourceId + '-layer', handleBackgroundMouseLeave);
           }
           
           if (map.getLayer(backgroundSourceId + '-layer')) {
@@ -312,7 +312,7 @@ export function TableConnections({
     // Add hover effect for lines
     let popup: maplibregl.Popup | null = null;
 
-    const handleMouseEnter = (e: maplibregl.MapMouseEvent) => {
+    const handleMouseEnter = (e: maplibregl.MapLayerMouseEvent) => {
       if (!table || !e.features?.[0]) return;
 
       const feature = e.features[0];

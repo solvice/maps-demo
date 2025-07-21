@@ -59,8 +59,7 @@ function RouteContent() {
     trafficRoute, 
     trafficError, 
     trafficLoading, 
-    calculateRoute,
-    clearRoute
+    calculateRoute
   } = useRoute();
   
   const { 
@@ -359,25 +358,18 @@ function RouteContent() {
         destination={destination}
         originText={originText}
         destinationText={destinationText}
-        originSelected={originSelected}
-        destinationSelected={destinationSelected}
-        onOriginChange={(coords) => coords ? setOrigin(coords) : setOrigin(null)}
-        onDestinationChange={(coords) => coords ? setDestination(coords) : setDestination(null)}
         onOriginTextChange={handleOriginTextChange}
         onDestinationTextChange={handleDestinationTextChange}
         onOriginSelect={handleOriginSelect}
         onDestinationSelect={handleDestinationSelect}
         routeConfig={routeConfig}
         onRouteConfigChange={handleRouteConfigChange}
-        onClearRoute={clearRoute}
         route={route}
         trafficRoute={trafficRoute}
         loading={routeLoading || geocodingLoading}
         trafficLoading={trafficLoading}
         error={routeError || geocodingError}
         trafficError={trafficError}
-        calculationTime={calculationTime}
-        trafficCalculationTime={trafficLoading ? null : calculationTime}
         showInstructions={showInstructions}
         onShowInstructionsChange={setShowInstructions}
         onHighlightedStepGeometryChange={setHighlightedStepGeometry}

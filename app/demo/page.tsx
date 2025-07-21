@@ -75,8 +75,7 @@ function UnifiedDemoContent() {
     trafficRoute, 
     trafficError, 
     trafficLoading, 
-    calculateRoute,
-    clearRoute
+    calculateRoute
   } = useRoute();
   
   const { 
