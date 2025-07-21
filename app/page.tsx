@@ -8,9 +8,9 @@ import { MapControls } from '@/components/map-controls';
 import { SpeedProfile } from '@/components/elevation-profile';
 import { StepHighlight } from '@/components/step-highlight';
 import { RouteConfig } from '@/components/route-config';
-import { RouteManager } from '@/components/route-manager';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
+import { useAutoZoom } from '@/hooks/use-auto-zoom';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -44,6 +44,9 @@ export default function Home() {
   });
   const { route, error: routeError, loading: routeLoading, calculationTime, calculateRoute } = useRoute();
   const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
+  
+  // Auto-zoom to route when calculated
+  useAutoZoom(route, { geometryFormat: routeConfig.geometries });
 
   const handleMapClick = (coords: Coordinates) => {
     // Normal click behavior
@@ -311,7 +314,7 @@ export default function Home() {
         onMapStyleChange={setMapStyle}
       />
       <MapWithContextMenu 
-        center={[3.7174, 51.0543]}
+        center={route ? undefined : [3.7174, 51.0543]}
         style={mapStyle}
         onClick={handleMapClick}
         onSetOrigin={handleSetOrigin}
@@ -339,11 +342,6 @@ export default function Home() {
           route={route} 
           geometryFormat={routeConfig.geometries} 
           highlightedRoute={hoveredRouteIndex}
-        />
-        <RouteManager 
-          route={route} 
-          geometryFormat={routeConfig.geometries}
-          autoZoom={true}
         />
         <StepHighlight 
           geometry={highlightedStepGeometry}

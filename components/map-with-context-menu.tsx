@@ -7,7 +7,7 @@ import { MapProvider } from '@/contexts/map-context';
 import { cn } from '@/lib/utils';
 
 interface MapProps {
-  center?: [number, number]; // [longitude, latitude]
+  center?: [number, number] | undefined; // [longitude, latitude] or undefined to allow auto-zoom
   zoom?: number;
   style?: string;
   onLoad?: (map: maplibregl.Map) => void;
@@ -137,9 +137,9 @@ export function MapWithContextMenu({
     }
   }, []); // Only run once
 
-  // Update center when it changes
+  // Update center when it changes (but not when center is undefined to allow auto-zoom)
   useEffect(() => {
-    if (map.current && isLoaded) {
+    if (map.current && isLoaded && center) {
       map.current.setCenter(center);
     }
   }, [center, isLoaded]);
