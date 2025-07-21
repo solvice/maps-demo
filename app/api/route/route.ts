@@ -86,15 +86,6 @@ export async function POST(request: NextRequest) {
       ...optionalParams
     };
 
-    // Debug logging for failed requests
-    console.log('🚀 Solvice API Request:', {
-      url: 'https://routing.solvice.io/route',
-      coordinates: coordinates,
-      routingEngine: optionalParams.routingEngine,
-      departureTime: optionalParams.departureTime,
-      vehicleType: optionalParams.vehicleType,
-      alternatives: optionalParams.alternatives
-    });
 
     const solviceResponse = await fetch('https://routing.solvice.io/route', {
       method: 'POST',
@@ -108,18 +99,8 @@ export async function POST(request: NextRequest) {
     if (!solviceResponse.ok) {
       console.error('Solvice API error:', solviceResponse.status, solviceResponse.statusText);
       
-      // Try to get detailed error response
-      let errorDetails = '';
-      try {
-        const errorBody = await solviceResponse.text();
-        console.error('Solvice API error body:', errorBody);
-        errorDetails = errorBody;
-      } catch (e) {
-        console.error('Could not read error response body');
-      }
-      
       return NextResponse.json(
-        { error: `Route calculation failed: ${solviceResponse.status} ${solviceResponse.statusText}`, details: errorDetails },
+        { error: `Route calculation failed: ${solviceResponse.status} ${solviceResponse.statusText}` },
         { status: solviceResponse.status }
       );
     }
