@@ -31,11 +31,11 @@ function RouteContent() {
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
-  const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
+  const [hoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const flyToTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
-  const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
+  const [highlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 2,
     steps: true,
@@ -258,7 +258,7 @@ function RouteContent() {
     });
   };
 
-  const handleMarkerDragStart = (type: 'origin' | 'destination') => {
+  const handleMarkerDragStart = () => {
     setIsDragging(true);
     isDraggingRef.current = true;
   };
@@ -351,10 +351,6 @@ function RouteContent() {
     setRouteConfig(configWithTime);
   };
 
-  const handleStepHover = (stepGeometry: string | null, stepIndex: number | null) => {
-    setHighlightedStepGeometry(stepGeometry);
-    setHighlightedStepIndex(stepIndex);
-  };
 
   return (
     <DemoLayout onClick={handleMapClick}>
@@ -384,8 +380,6 @@ function RouteContent() {
         trafficCalculationTime={trafficLoading ? null : calculationTime}
         showInstructions={showInstructions}
         onShowInstructionsChange={setShowInstructions}
-        highlightedStepIndex={highlightedStepIndex}
-        onHighlightedStepIndexChange={setHighlightedStepIndex}
         onHighlightedStepGeometryChange={setHighlightedStepGeometry}
       />
       {origin && (

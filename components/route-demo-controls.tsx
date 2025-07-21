@@ -32,8 +32,6 @@ interface RouteDemoControlsProps {
   trafficCalculationTime: number | null;
   showInstructions: boolean;
   onShowInstructionsChange: (show: boolean) => void;
-  highlightedStepIndex: number | null;
-  onHighlightedStepIndexChange: (index: number | null) => void;
   onHighlightedStepGeometryChange: (geometry: string | null) => void;
 }
 
@@ -63,8 +61,6 @@ export function RouteDemoControls({
   trafficCalculationTime,
   showInstructions,
   onShowInstructionsChange,
-  highlightedStepIndex,
-  onHighlightedStepIndexChange,
   onHighlightedStepGeometryChange,
 }: RouteDemoControlsProps) {
   return (

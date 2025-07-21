@@ -10,6 +10,8 @@ interface MapProps {
   center?: [number, number] | undefined; // [longitude, latitude] or undefined to allow auto-zoom
   zoom?: number;
   style?: string;
+  initialStyle?: string;
+  onStyleChange?: (style: string) => void;
   onLoad?: (map: maplibregl.Map) => void;
   onError?: (error: Error) => void;
   onClick?: (coordinates: [number, number]) => void;
@@ -30,6 +32,8 @@ export function MapWithContextMenu({
   center = [3.7174, 51.0543], // Ghent fallback
   zoom = 12, 
   style: mapStyleUrl = 'https://cdn.solvice.io/styles/grayscale.json',
+  initialStyle,
+  onStyleChange,
   onLoad,
   onError,
   onClick,
@@ -56,7 +60,7 @@ export function MapWithContextMenu({
     try {
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: mapStyleUrl,
+        style: initialStyle || mapStyleUrl,
         center: center,
         zoom: zoom,
         attributionControl: false,
@@ -155,9 +159,13 @@ export function MapWithContextMenu({
   // Update style when it changes
   useEffect(() => {
     if (map.current && isLoaded) {
-      map.current.setStyle(mapStyleUrl);
+      const styleToUse = initialStyle || mapStyleUrl;
+      map.current.setStyle(styleToUse);
+      if (onStyleChange) {
+        onStyleChange(styleToUse);
+      }
     }
-  }, [mapStyleUrl, isLoaded]);
+  }, [initialStyle, mapStyleUrl, isLoaded, onStyleChange]);
 
   // Hide context menu when clicking elsewhere
   useEffect(() => {
