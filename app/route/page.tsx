@@ -452,7 +452,7 @@ function HomeContent() {
         onMapStyleChange={setMapStyle}
       />
       <MapWithContextMenu 
-        center={route ? undefined : [3.7174, 51.0543]}
+        center={route ? undefined : (origin || destination) ? (origin || destination) : [3.7174, 51.0543]}
         style={mapStyle}
         onClick={handleMapClick}
         onSetOrigin={handleSetOrigin}
