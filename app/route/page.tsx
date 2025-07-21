@@ -11,12 +11,12 @@ import { StepHighlight } from '@/components/step-highlight';
 import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
-import { useAutoZoom } from '@/hooks/use-auto-zoom';
 import { useMapContext } from '@/contexts/map-context';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { toast } from 'sonner';
+import maplibregl from 'maplibre-gl';
 import { shouldEnableTrafficComparison } from '@/lib/route-utils';
 
 type Coordinates = [number, number];
@@ -63,6 +63,7 @@ function HomeContent() {
   } = useRoute();
   const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
   const map = useMapContext();
+  const mapRef = useRef<maplibregl.Map | null>(null);
   
   // Parse URL parameters on initial load
   useEffect(() => {
@@ -72,7 +73,6 @@ function HomeContent() {
     const destParam = searchParams.get('destination');
     const departureTimeParam = searchParams.get('departureTime');
     
-    console.log('URL Parameters:', { originParam, destParam, departureTimeParam });
     
     if (originParam) {
       try {
@@ -125,35 +125,65 @@ function HomeContent() {
     setIsInitialized(true);
   }, [searchParams, getAddressFromCoordinates, isInitialized]);
 
-  // Auto-center map to URL parameters on initial load
+  // Handle map ready callback
+  const handleMapReady = (mapInstance: maplibregl.Map) => {
+    mapRef.current = mapInstance;
+  };
+
+
+  // Simplified flyTo logic: only 2 effects
   useEffect(() => {
-    console.log('Auto-center effect:', { isInitialized, hasMap: !!map, origin, destination, hasRoute: !!route });
-    if (isInitialized && map && (origin || destination) && !route) {
-      const targetCoordinate = origin || destination;
-      if (targetCoordinate && map.isStyleLoaded()) {
-        console.log('Centering map to URL parameter coordinate:', targetCoordinate);
-        map.flyTo({
-          center: targetCoordinate,
-          zoom: 12,
-          duration: 1000,
-          essential: true
-        });
-      } else if (targetCoordinate && map && !map.isStyleLoaded()) {
-        console.log('Map style not loaded, waiting for styledata event');
-        map.once('styledata', () => {
-          console.log('Style loaded, now centering to:', targetCoordinate);
-          map.flyTo({
-            center: targetCoordinate,
-            zoom: 12,
+    if (isInitialized && mapRef.current) {
+      const currentMap = mapRef.current;
+      
+      const doFlyTo = (center: Coordinates, zoom: number, reason: string) => {
+        console.log(`Executing flyTo - ${reason}:`, { center, zoom });
+        if (currentMap.isStyleLoaded()) {
+          currentMap.flyTo({
+            center,
+            zoom,
             duration: 1000,
             essential: true
           });
-        });
-      } else {
-        console.log('Map not ready for centering:', { targetCoordinate, isStyleLoaded: map?.isStyleLoaded() });
+        } else {
+          console.log('Map style not loaded, waiting for styledata event');
+          currentMap.once('styledata', () => {
+            console.log(`Style loaded, now flying to - ${reason}:`, { center, zoom });
+            currentMap.flyTo({
+              center,
+              zoom,
+              duration: 1000,
+              essential: true
+            });
+          });
+        }
+      };
+
+      // Effect 1: Both origin and destination → flyTo bounding box
+      if (origin && destination) {
+        const minLng = Math.min(origin[0], destination[0]);
+        const maxLng = Math.max(origin[0], destination[0]);
+        const minLat = Math.min(origin[1], destination[1]);
+        const maxLat = Math.max(origin[1], destination[1]);
+        
+        const padding = 0.01; // ~1km padding
+        const centerLng = (minLng + maxLng) / 2;
+        const centerLat = (minLat + maxLat) / 2;
+        
+        const latDiff = maxLat - minLat + (padding * 2);
+        const lngDiff = maxLng - minLng + (padding * 2);
+        const latZoom = Math.log2(360 / latDiff);
+        const lngZoom = Math.log2(360 / lngDiff);
+        const zoom = Math.max(10, Math.min(15, Math.min(latZoom, lngZoom) - 1));
+        
+        doFlyTo([centerLng, centerLat], zoom, 'both coordinates');
+      }
+      // Effect 2: Only origin → flyTo origin
+      else if (origin) {
+        doFlyTo(origin, 14, 'origin only');
       }
     }
-  }, [isInitialized, map, origin, destination, route]);
+  }, [isInitialized, mapRef.current, origin, destination]);
   
   // Update URL when route parameters change
   useEffect(() => {
@@ -178,52 +208,6 @@ function HomeContent() {
       router.replace(newUrl, { scroll: false });
     }
   }, [origin, destination, routeConfig.departureTime, router, isInitialized]);
-  
-  // Auto-zoom to route when calculated
-  useAutoZoom(route, { geometryFormat: routeConfig.geometries });
-
-  // Auto-zoom to markers when both origin and destination are set (before route calculation)
-  useEffect(() => {
-    if (origin && destination && !route && map) {
-      if (map.isStyleLoaded()) {
-        // Calculate bounds for the two points
-        const minLng = Math.min(origin[0], destination[0]);
-        const maxLng = Math.max(origin[0], destination[0]);
-        const minLat = Math.min(origin[1], destination[1]);
-        const maxLat = Math.max(origin[1], destination[1]);
-        
-        // Add some padding to the bounds
-        const padding = 0.01; // ~1km padding
-        const bounds: [[number, number], [number, number]] = [
-          [minLng - padding, minLat - padding],
-          [maxLng + padding, maxLat + padding]
-        ];
-        
-        // Calculate center and zoom
-        const centerLng = (minLng + maxLng) / 2;
-        const centerLat = (minLat + maxLat) / 2;
-        
-        const latDiff = maxLat - minLat + (padding * 2);
-        const lngDiff = maxLng - minLng + (padding * 2);
-        const latZoom = Math.log2(360 / latDiff);
-        const lngZoom = Math.log2(360 / lngDiff);
-        const zoom = Math.max(10, Math.min(15, Math.min(latZoom, lngZoom) - 1));
-        
-        console.log('Zooming to markers:', {
-          center: [centerLng, centerLat],
-          zoom,
-          bounds
-        });
-        
-        map.flyTo({
-          center: [centerLng, centerLat],
-          zoom,
-          duration: 1000,
-          essential: true
-        });
-      }
-    }
-  }, [origin, destination, route, map]);
 
   const handleMapClick = (coords: Coordinates) => {
     // Normal click behavior
@@ -403,6 +387,8 @@ function HomeContent() {
       if (coordinates) {
         setOrigin(coordinates);
         console.log('Origin updated via geocoding:', coordinates);
+        
+        // Flyto will be handled by the main flyTo effect above
       } else {
         setOrigin(null);
       }
@@ -417,6 +403,8 @@ function HomeContent() {
       if (coordinates) {
         setDestination(coordinates);
         console.log('Destination updated via geocoding:', coordinates);
+        
+        // Flyto will be handled by the main flyTo effect above
       } else {
         setDestination(null);
       }
@@ -489,6 +477,7 @@ function HomeContent() {
         onClick={handleMapClick}
         onSetOrigin={handleSetOrigin}
         onSetDestination={handleSetDestination}
+        onMapReady={handleMapReady}
       >
         {origin && (
           <Marker

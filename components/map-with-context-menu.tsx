@@ -15,6 +15,7 @@ interface MapProps {
   onClick?: (coordinates: [number, number]) => void;
   onSetOrigin?: (coordinates: [number, number]) => void;
   onSetDestination?: (coordinates: [number, number]) => void;
+  onMapReady?: (map: maplibregl.Map) => void;
   children?: React.ReactNode;
 }
 
@@ -34,10 +35,12 @@ export function MapWithContextMenu({
   onClick,
   onSetOrigin,
   onSetDestination,
+  onMapReady,
   children
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
@@ -61,8 +64,12 @@ export function MapWithContextMenu({
 
       map.current.on('load', () => {
         setIsLoaded(true);
+        setMapInstance(map.current);
         if (onLoad && map.current) {
           onLoad(map.current);
+        }
+        if (onMapReady && map.current) {
+          onMapReady(map.current);
         }
       });
 
@@ -185,7 +192,7 @@ export function MapWithContextMenu({
   };
 
   return (
-    <MapProvider value={map.current}>
+    <MapProvider value={mapInstance}>
       <div className="relative h-full w-full">
         <div 
           ref={mapContainer} 
