@@ -4,6 +4,7 @@ import { DemoLayout } from '@/components/demo-layout';
 import { TableMarker } from '@/components/table-marker';
 import { TableConnections } from '@/components/table-connections';
 import { TableDemoControls } from '@/components/table-demo-controls';
+import { TrafficImpactLegend } from '@/components/traffic-impact-legend';
 import { useTable } from '@/hooks/use-table';
 import { useMapContext } from '@/contexts/map-context';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -19,7 +20,17 @@ function TableContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   
   const map = useMapContext();
-  const { table, loading, error, calculationTime, calculateTable, clearTable } = useTable();
+  const { 
+    table, 
+    trafficTable, 
+    loading, 
+    error, 
+    calculationTime, 
+    trafficImpacts, 
+    maxTrafficImpact, 
+    calculateTable, 
+    clearTable 
+  } = useTable();
   
   const flyToTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const calculateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,10 +130,10 @@ function TableContent() {
   const handleMapClick = useCallback((coords: Coordinates) => {
     setCoordinates(prev => {
       const newCoords = [...prev, coords];
+      toast.success(`Marker ${newCoords.length} placed! ${newCoords.length >= 2 ? 'Matrix will calculate in 1s...' : ''}`);
       return newCoords;
     });
-    toast.success(`Marker ${coordinates.length + 1} placed! ${coordinates.length >= 1 ? 'Matrix will calculate in 1s...' : ''}`);
-  }, [coordinates.length]);
+  }, []);
 
   // Effect to trigger calculation when coordinates change from click
   useEffect(() => {
@@ -224,6 +235,15 @@ function TableContent() {
         coordinates={coordinates}
         hoveredMarkerIndex={hoveredMarkerIndex}
         table={table}
+        trafficTable={trafficTable}
+        trafficImpacts={trafficImpacts}
+        maxTrafficImpact={maxTrafficImpact}
+      />
+      
+      {/* Traffic Impact Legend */}
+      <TrafficImpactLegend
+        maxTrafficImpact={maxTrafficImpact || 1.0}
+        show={!!table && !!trafficTable}
       />
     </DemoLayout>
   );
