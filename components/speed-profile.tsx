@@ -5,6 +5,8 @@ import { ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { RouteResponse } from '@/lib/solvice-api';
 import { formatDistance } from '@/lib/format';
+import { useMapContext } from '@/contexts/map-context';
+import { extractRouteCoordinates } from '@/lib/route-utils';
 
 interface SpeedProfileProps {
   route: RouteResponse | null;
@@ -136,6 +138,8 @@ function extractSpeedData(route: RouteResponse, selectedRouteIndex: number, rout
 }
 
 export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show = false, onStepHover, showInstructions = false }: SpeedProfileProps) {
+  const map = useMapContext();
+  
   if (!show || !route || !route.routes || route.routes.length === 0) {
     return null;
   }
@@ -269,6 +273,53 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   console.log('📈 Combined speed data points:', combinedData.length);
   console.log('📈 Combined speed data sample:', combinedData.slice(0, 3));
 
+  // Function to find coordinates at a specific distance along the route
+  const getCoordinatesAtDistance = (targetDistance: number): [number, number] | null => {
+    if (!route || !route.routes || route.routes.length === 0) return null;
+    
+    try {
+      // Extract all route coordinates
+      const routeCoordinates = extractRouteCoordinates(route, 'polyline');
+      if (routeCoordinates.length === 0) return null;
+      
+      // Calculate cumulative distances along the route
+      let cumulativeDistance = 0;
+      const coordinatesWithDistance: Array<{ coords: [number, number], distance: number }> = [];
+      
+      coordinatesWithDistance.push({ coords: routeCoordinates[0], distance: 0 });
+      
+      for (let i = 1; i < routeCoordinates.length; i++) {
+        const prev = routeCoordinates[i - 1];
+        const curr = routeCoordinates[i];
+        
+        // Calculate distance between points (rough approximation)
+        const latDiff = curr[1] - prev[1];
+        const lngDiff = curr[0] - prev[0];
+        const segmentDistance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111000; // Convert to meters
+        
+        cumulativeDistance += segmentDistance;
+        coordinatesWithDistance.push({ coords: curr, distance: cumulativeDistance });
+      }
+      
+      // Find the coordinate closest to target distance
+      let closest = coordinatesWithDistance[0];
+      let minDiff = Math.abs(targetDistance - closest.distance);
+      
+      for (const point of coordinatesWithDistance) {
+        const diff = Math.abs(targetDistance - point.distance);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = point;
+        }
+      }
+      
+      return closest.coords;
+    } catch (error) {
+      console.error('Error calculating coordinates at distance:', error);
+      return null;
+    }
+  };
+
   // Calculate speed stats for both routes
   const speeds = combinedData.map(d => d.speed).filter((s): s is number => s !== null && s > 0);
   const trafficSpeeds = combinedData.map(d => d.trafficSpeed).filter((s): s is number => s !== null && s > 0);
@@ -305,9 +356,26 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
               data={combinedData} 
               margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
               onMouseMove={(data) => {
-                if (data && data.activePayload && data.activePayload[0] && onStepHover) {
+                if (data && data.activePayload && data.activePayload[0]) {
                   const payload = data.activePayload[0].payload;
-                  onStepHover(payload.geometry || null, payload.stepIndex);
+                  
+                  // Call step hover callback
+                  if (onStepHover) {
+                    onStepHover(payload.geometry || null, payload.stepIndex);
+                  }
+                  
+                  // FlyTo corresponding location on map
+                  if (map && map.isStyleLoaded()) {
+                    const coords = getCoordinatesAtDistance(payload.distance);
+                    if (coords) {
+                      map.flyTo({
+                        center: coords,
+                        zoom: Math.max(map.getZoom(), 14), // Don't zoom out, only zoom in if needed
+                        duration: 500, // Quick transition
+                        essential: false // Allow interruption
+                      });
+                    }
+                  }
                 }
               }}
               onMouseLeave={() => {
