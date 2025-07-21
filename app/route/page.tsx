@@ -361,8 +361,8 @@ function RouteContent() {
         destinationText={destinationText}
         originSelected={originSelected}
         destinationSelected={destinationSelected}
-        onOriginChange={handleOriginTextChange}
-        onDestinationChange={handleDestinationTextChange}
+        onOriginChange={(coords) => coords ? setOrigin(coords) : setOrigin(null)}
+        onDestinationChange={(coords) => coords ? setDestination(coords) : setDestination(null)}
         onOriginTextChange={handleOriginTextChange}
         onDestinationTextChange={handleDestinationTextChange}
         onOriginSelect={handleOriginSelect}

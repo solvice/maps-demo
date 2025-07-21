@@ -204,4 +204,4 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-export { mockMap, mockMarker, mockToast };
+export { mockMap, mockMarker, mockToast, mockPerformanceNow };

@@ -11,25 +11,18 @@ interface RouteDemoControlsProps {
   destination: Coordinates | null;
   originText: string;
   destinationText: string;
-  originSelected: boolean;
-  destinationSelected: boolean;
-  onOriginChange: (origin: Coordinates | null) => void;
-  onDestinationChange: (destination: Coordinates | null) => void;
   onOriginTextChange: (text: string) => void;
   onDestinationTextChange: (text: string) => void;
   onOriginSelect: (result: { coordinates: Coordinates; address: string; confidence: number }) => void;
   onDestinationSelect: (result: { coordinates: Coordinates; address: string; confidence: number }) => void;
   routeConfig: RouteConfig;
   onRouteConfigChange: (config: RouteConfig) => void;
-  onClearRoute: () => void;
   route: RouteResponse | null;
   trafficRoute: RouteResponse | null;
   loading: boolean;
   trafficLoading: boolean;
   error: string | null;
   trafficError: string | null;
-  calculationTime: number | null;
-  trafficCalculationTime: number | null;
   showInstructions: boolean;
   onShowInstructionsChange: (show: boolean) => void;
   onHighlightedStepGeometryChange: (geometry: string | null) => void;
@@ -40,25 +33,18 @@ export function RouteDemoControls({
   destination,
   originText,
   destinationText,
-  originSelected,
-  destinationSelected,
-  onOriginChange,
-  onDestinationChange,
   onOriginTextChange,
   onDestinationTextChange,
   onOriginSelect,
   onDestinationSelect,
   routeConfig,
   onRouteConfigChange,
-  onClearRoute,
   route,
   trafficRoute,
   loading,
   trafficLoading,
   error,
   trafficError,
-  calculationTime,
-  trafficCalculationTime,
   showInstructions,
   onShowInstructionsChange,
   onHighlightedStepGeometryChange,
@@ -66,31 +52,26 @@ export function RouteDemoControls({
   return (
     <>
       <RouteControlPanel
-        origin={origin}
-        destination={destination}
-        originText={originText}
-        destinationText={destinationText}
-        originSelected={originSelected}
-        destinationSelected={destinationSelected}
-        onOriginChange={onOriginChange}
-        onDestinationChange={onDestinationChange}
-        onOriginTextChange={onOriginTextChange}
-        onDestinationTextChange={onDestinationTextChange}
+        origin={originText}
+        destination={destinationText}
+        onOriginChange={onOriginTextChange}
+        onDestinationChange={onDestinationTextChange}
         onOriginSelect={onOriginSelect}
         onDestinationSelect={onDestinationSelect}
+        vehicleType={routeConfig.vehicleType}
+        onVehicleTypeChange={(value) => onRouteConfigChange({ ...routeConfig, vehicleType: value as 'CAR' | 'BIKE' | 'TRUCK' | 'ELECTRIC_CAR' | 'ELECTRIC_BIKE' })}
         routeConfig={routeConfig}
         onRouteConfigChange={onRouteConfigChange}
-        onClearRoute={onClearRoute}
         route={route}
         trafficRoute={trafficRoute}
         loading={loading}
         trafficLoading={trafficLoading}
         error={error}
         trafficError={trafficError}
-        calculationTime={calculationTime}
-        trafficCalculationTime={trafficCalculationTime}
         showInstructions={showInstructions}
         onShowInstructionsChange={onShowInstructionsChange}
+        originCoordinates={origin}
+        destinationCoordinates={destination}
       />
       
       {(route || trafficRoute) && (

@@ -41,7 +41,7 @@ function UnifiedDemoContent() {
   const [hoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
-  const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
+  const [highlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 2,
     steps: true,
@@ -452,29 +452,20 @@ function UnifiedDemoContent() {
       destination={destination}
       originText={originText}
       destinationText={destinationText}
-      originSelected={originSelected}
-      destinationSelected={destinationSelected}
-      onOriginChange={(coords) => coords ? setOrigin(coords) : setOrigin(null)}
-      onDestinationChange={(coords) => coords ? setDestination(coords) : setDestination(null)}
       onOriginTextChange={handleOriginTextChange}
       onDestinationTextChange={handleDestinationTextChange}
       onOriginSelect={handleOriginSelect}
       onDestinationSelect={handleDestinationSelect}
       routeConfig={routeConfig}
       onRouteConfigChange={handleRouteConfigChange}
-      onClearRoute={clearRoute}
       route={route}
       trafficRoute={trafficRoute}
       loading={routeLoading || geocodingLoading}
       trafficLoading={trafficLoading}
       error={routeError || geocodingError}
       trafficError={trafficError}
-      calculationTime={routeCalculationTime}
-      trafficCalculationTime={trafficLoading ? null : routeCalculationTime}
       showInstructions={showInstructions}
       onShowInstructionsChange={setShowInstructions}
-      highlightedStepIndex={highlightedStepIndex}
-      onHighlightedStepIndexChange={setHighlightedStepIndex}
       onHighlightedStepGeometryChange={setHighlightedStepGeometry}
     />
   ) : (

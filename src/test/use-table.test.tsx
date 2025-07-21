@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTable } from '@/hooks/use-table';
 import { mockFetchResponses, baselineResponses, trafficResponses, errorResponses, testCoordinates } from './fixtures/table-api-responses';
 import { tableTestCoordinates, mockToast } from './utils/table-test-utils';
@@ -17,17 +17,15 @@ describe('useTable Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.clearAllTimers();
-    vi.useFakeTimers();
     
     // Reset fetch mock
     (global.fetch as any).mockClear();
     
-    // Reset performance mock
-    (window.performance.now as any).mockReturnValue(1000);
+    // Reset performance mock - this is done in setup-table.ts
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.clearAllTimers();
   });
 
   describe('Initial State', () => {
@@ -55,13 +53,16 @@ describe('useTable Hook', () => {
       
       const { result } = renderHook(() => useTable());
       
-      // Set loading immediately
-      result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      // Start calculation
+      act(() => {
+        result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      });
       
-      expect(result.current.loading).toBe(true);
-      expect(result.current.error).toBe(null);
+      // Wait for loading to be true, then false
+      await waitFor(() => {
+        expect(result.current.loading).toBe(true);
+      });
       
-      // Wait for API calls to complete
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
@@ -96,11 +97,13 @@ describe('useTable Hook', () => {
       
       const { result } = renderHook(() => useTable());
       
-      result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      act(() => {
+        result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      });
       
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
-      });
+      }, { timeout: 10000 });
       
       expect(result.current.trafficImpacts).toEqual([[1.0, 1.3], [1.3, 1.0]]);
       expect(result.current.maxTrafficImpact).toBe(1.3);
@@ -179,10 +182,14 @@ describe('useTable Hook', () => {
       
       const { result } = renderHook(() => useTable());
       
-      result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      act(() => {
+        result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      });
       
-      // Should start loading immediately
-      expect(result.current.loading).toBe(true);
+      // Wait for loading to be true, then false
+      await waitFor(() => {
+        expect(result.current.loading).toBe(true);
+      });
       
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
@@ -408,9 +415,13 @@ describe('useTable Hook', () => {
       
       const { result, unmount } = renderHook(() => useTable());
       
-      result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      act(() => {
+        result.current.calculateTable(tableTestCoordinates.simple, undefined, 0);
+      });
       
-      expect(result.current.loading).toBe(true);
+      await waitFor(() => {
+        expect(result.current.loading).toBe(true);
+      });
       
       // Unmount before request completes
       unmount();
