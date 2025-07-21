@@ -168,6 +168,7 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   }
 
   console.log(`📏 Distance grid: 0 to ${maxDistance}m with ${distanceGrid.length} points (${sampleInterval}m intervals)`);
+  console.log('📏 First few distance grid points:', distanceGrid.slice(0, 5));
 
   // Helper function to interpolate speed at a given distance
   function interpolateSpeedAtDistance(speedData: Array<{ distance: number; speed?: number; trafficSpeed?: number }>, targetDistance: number): number | null {
@@ -208,7 +209,8 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
       const beforeSpeed = beforePoint.speed || beforePoint.trafficSpeed || 0;
       const afterSpeed = afterPoint.speed || afterPoint.trafficSpeed || 0;
       const distanceRatio = (targetDistance - beforePoint.distance) / (afterPoint.distance - beforePoint.distance);
-      return beforeSpeed + (afterSpeed - beforeSpeed) * distanceRatio;
+      const interpolatedSpeed = beforeSpeed + (afterSpeed - beforeSpeed) * distanceRatio;
+      return Math.round(interpolatedSpeed * 10) / 10; // Round to 1 decimal place
     }
     
     return null;
@@ -305,11 +307,21 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
               />
               <ChartTooltip
                 content={<ChartTooltipContent 
-                  labelFormatter={(value) => `Distance: ${formatDistance(Number(value))}`}
-                  formatter={(value, name) => [
-                    `${value} km/h`, 
-                    name === 'speed' ? 'Regular Speed' : 'Traffic Speed'
-                  ]}
+                  labelFormatter={(value) => {
+                    const numValue = Number(value);
+                    if (isNaN(numValue)) {
+                      return 'Distance: 0 m';
+                    }
+                    return `Distance: ${formatDistance(numValue)}`;
+                  }}
+                  formatter={(value, name) => {
+                    const numValue = Number(value);
+                    const roundedValue = isNaN(numValue) ? 0 : Math.round(numValue);
+                    return [
+                      `${roundedValue} km/h`, 
+                      name === 'speed' ? 'Regular Speed' : 'Traffic Speed'
+                    ];
+                  }}
                 />}
               />
               <Area
