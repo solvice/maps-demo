@@ -29,6 +29,8 @@ function HomeContent() {
   const [destination, setDestination] = useState<Coordinates | null>(null);
   const [originText, setOriginText] = useState<string>('');
   const [destinationText, setDestinationText] = useState<string>('');
+  const [originSelected, setOriginSelected] = useState<boolean>(false);
+  const [destinationSelected, setDestinationSelected] = useState<boolean>(false);
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
@@ -82,6 +84,7 @@ function HomeContent() {
           const coords: Coordinates = [parseFloat(parts[0]), parseFloat(parts[1])];
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setOrigin(coords);
+            setOriginSelected(true); // Mark as selected from URL parameters
             getAddressFromCoordinates(coords).then(address => {
               setOriginText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -99,6 +102,7 @@ function HomeContent() {
           const coords: Coordinates = [parseFloat(parts[0]), parseFloat(parts[1])];
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setDestination(coords);
+            setDestinationSelected(true); // Mark as selected from URL parameters
             getAddressFromCoordinates(coords).then(address => {
               setDestinationText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -273,6 +277,7 @@ function HomeContent() {
 
   const handleSetOrigin = (coords: Coordinates) => {
     setOrigin(coords);
+    setOriginSelected(true); // Mark as selected via map click
     // Start reverse geocoding for origin
     getAddressFromCoordinates(coords).then(address => {
       if (address) {
@@ -285,6 +290,7 @@ function HomeContent() {
 
   const handleSetDestination = (coords: Coordinates) => {
     setDestination(coords);
+    setDestinationSelected(true); // Mark as selected via map click
     // Start reverse geocoding for destination
     getAddressFromCoordinates(coords).then(address => {
       if (address) {
@@ -295,9 +301,9 @@ function HomeContent() {
     });
   };
 
-  // Auto-calculate route when both markers are placed or config changes
+  // Auto-calculate route when both markers are placed AND selected or config changes
   useEffect(() => {
-    if (origin && destination) {
+    if (origin && destination && originSelected && destinationSelected) {
       // Use both state and ref to ensure we catch the dragging state correctly
       const isCurrentlyDragging = isDragging || isDraggingRef.current;
       const debounceTime = isCurrentlyDragging ? 0 : 300;
@@ -316,7 +322,7 @@ function HomeContent() {
       
       calculateRoute(origin, destination, routeConfig, debounceTime, compareTraffic);
     }
-  }, [origin, destination, routeConfig, calculateRoute, isDragging]);
+  }, [origin, destination, originSelected, destinationSelected, routeConfig, calculateRoute, isDragging]);
 
   // Log route results
   useEffect(() => {
@@ -376,6 +382,7 @@ function HomeContent() {
     
     if (type === 'origin') {
       setOrigin(coords);
+      setOriginSelected(true); // Mark as selected via drag
       // Start reverse geocoding for better address
       getAddressFromCoordinates(coords).then(address => {
         if (address) {
@@ -384,6 +391,7 @@ function HomeContent() {
       });
     } else {
       setDestination(coords);
+      setDestinationSelected(true); // Mark as selected via drag
       // Start reverse geocoding for better address
       getAddressFromCoordinates(coords).then(address => {
         if (address) {
@@ -397,10 +405,12 @@ function HomeContent() {
   const handleOriginSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
     setOrigin(result.coordinates);
     setOriginText(result.address);
+    setOriginSelected(true); // Mark as selected via autocomplete
     
     // Clear destination when origin changes via autocomplete
     setDestination(null);
     setDestinationText('');
+    setDestinationSelected(false);
     
     console.log('Origin selected via autocomplete:', result);
   };
@@ -408,6 +418,7 @@ function HomeContent() {
   const handleDestinationSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
     setDestination(result.coordinates);
     setDestinationText(result.address);
+    setDestinationSelected(true); // Mark as selected via autocomplete
     
     console.log('Destination selected via autocomplete:', result);
   };
@@ -418,32 +429,39 @@ function HomeContent() {
     // Clear destination when origin changes via input (maintaining consistency)
     setDestination(null);
     setDestinationText('');
+    setOriginSelected(false); // Reset selection state on text change
+    setDestinationSelected(false);
     
     // Forward geocode to get coordinates
     getCoordinatesFromAddress(value).then(coordinates => {
       if (coordinates) {
         setOrigin(coordinates);
+        setOriginSelected(true); // Mark as selected via geocoding
         console.log('Origin updated via geocoding:', coordinates);
         
         // Flyto will be handled by the main flyTo effect above
       } else {
         setOrigin(null);
+        setOriginSelected(false);
       }
     });
   };
 
   const handleDestinationTextChange = (value: string) => {
     setDestinationText(value);
+    setDestinationSelected(false); // Reset selection state on text change
     
     // Forward geocode to get coordinates
     getCoordinatesFromAddress(value).then(coordinates => {
       if (coordinates) {
         setDestination(coordinates);
+        setDestinationSelected(true); // Mark as selected via geocoding
         console.log('Destination updated via geocoding:', coordinates);
         
         // Flyto will be handled by the main flyTo effect above
       } else {
         setDestination(null);
+        setDestinationSelected(false);
       }
     });
   };
