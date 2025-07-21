@@ -12,6 +12,7 @@ interface SpeedProfileProps {
   selectedRouteIndex?: number;
   show?: boolean;
   onStepHover?: (stepGeometry: string | null, stepIndex: number | null) => void;
+  showInstructions?: boolean;
 }
 
 const chartConfig = {
@@ -128,7 +129,7 @@ function extractSpeedData(route: RouteResponse, selectedRouteIndex: number, rout
   return speedData;
 }
 
-export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show = false, onStepHover }: SpeedProfileProps) {
+export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show = false, onStepHover, showInstructions = false }: SpeedProfileProps) {
   if (!show || !route || !route.routes || route.routes.length === 0) {
     return null;
   }
@@ -238,8 +239,11 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   const avgSpeed = speeds.length > 0 ? Math.round(speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length) : 0;
   const avgTrafficSpeed = trafficSpeeds.length > 0 ? Math.round(trafficSpeeds.reduce((sum, speed) => sum + speed, 0) / trafficSpeeds.length) : null;
 
+  // Adjust position when instructions are shown to avoid overlap
+  const bottomClass = showInstructions ? "bottom-4 left-80 right-4" : "bottom-4 left-4 right-4";
+
   return (
-    <Card className="absolute bottom-4 left-4 right-4 h-48 z-10 shadow-lg animate-in slide-in-from-bottom-2 duration-300" data-testid="speed-profile">
+    <Card className={`absolute ${bottomClass} h-48 z-10 shadow-lg animate-in slide-in-from-bottom-2 duration-300`} data-testid="speed-profile">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Speed Profile</CardTitle>

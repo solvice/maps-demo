@@ -28,7 +28,7 @@ interface ContextMenuState {
 export function MapWithContextMenu({ 
   center = [3.7174, 51.0543], // Ghent fallback
   zoom = 12, 
-  style: mapStyleUrl = 'https://cdn.solvice.io/styles/white.json',
+  style: mapStyleUrl = 'https://cdn.solvice.io/styles/grayscale.json',
   onLoad,
   onError,
   onClick,

@@ -33,7 +33,7 @@ export function Map({
     try {
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: 'https://cdn.solvice.io/styles/white.json',
+        style: 'https://cdn.solvice.io/styles/grayscale.json',
         center: center,
         zoom: zoom,
         attributionControl: false,

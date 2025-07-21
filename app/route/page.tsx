@@ -33,12 +33,12 @@ function HomeContent() {
   const isDraggingRef = useRef(false);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/white.json');
+  const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/grayscale.json');
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
   const [highlightedStepIndex, setHighlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
     alternatives: 2,
-    steps: false,
+    steps: true,  // Always request steps from API
     annotations: ['distance', 'duration'],
     geometries: 'polyline',
     overview: 'full',
@@ -358,22 +358,16 @@ function HomeContent() {
   // Handle route config change
   const handleRouteConfigChange = (newConfig: RouteConfig) => {
     // Always set departureTime to current time when any config changes
-    // Force geometries to always be 'polyline' and alternatives to always be 2
+    // Force geometries to always be 'polyline', alternatives to always be 2, and steps to always be true
     const configWithTime = {
       ...newConfig,
       geometries: 'polyline' as const,
       alternatives: 2,
+      steps: true,  // Always request steps from API
       departureTime: new Date().toISOString()
     };
     
     setRouteConfig(configWithTime);
-    
-    // Show/hide instructions based on steps setting
-    if (configWithTime.steps) {
-      setShowInstructions(true);
-    } else {
-      setShowInstructions(false);
-    }
   };
 
   // Handle step hover from speed profile
@@ -404,12 +398,11 @@ function HomeContent() {
         trafficError={trafficError}
         onRouteHover={setHoveredRouteIndex}
         showInstructions={showInstructions}
+        onShowInstructionsChange={setShowInstructions}
         originCoordinates={origin}
         destinationCoordinates={destination}
       />
       <MapControls 
-        routeConfig={routeConfig}
-        onRouteConfigChange={handleRouteConfigChange}
         mapStyle={mapStyle}
         onMapStyleChange={setMapStyle}
       />
@@ -454,6 +447,7 @@ function HomeContent() {
         selectedRouteIndex={hoveredRouteIndex || 0}
         show={!!(route && route.routes && route.routes.length > 0)}
         onStepHover={handleStepHover}
+        showInstructions={showInstructions}
       />
     </main>
   );
