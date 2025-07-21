@@ -86,7 +86,8 @@ export function Map({
         onError(error as Error);
       }
     }
-  }, []); // Only run once
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once - intentionally omitting dependencies to avoid re-initialization
 
   // Update center when it changes
   useEffect(() => {

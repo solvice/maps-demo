@@ -1,6 +1,8 @@
 # Solvice Maps Demo
 
-A comprehensive interactive mapping application built with Next.js, MapLibre GL JS, and the Solvice API. Features real-time routing, speed analysis, turn-by-turn navigation, and interactive map controls.
+A comprehensive interactive mapping application built with Next.js, MapLibre GL JS, and the Solvice API. Features real-time routing with automatic traffic comparison, speed analysis, turn-by-turn navigation, and URL-shareable routes.
+
+🌐 **Live Demo**: [https://maps-demo.solvice.io](https://maps-demo.solvice.io)
 
 ## 🚀 Features
 
@@ -9,36 +11,36 @@ A comprehensive interactive mapping application built with Next.js, MapLibre GL 
 - **Route Planning**: Click-to-place markers with drag-and-drop repositioning
 - **Real-time Routing**: Instant route calculation with zero-delay during marker dragging
 - **Multiple Vehicle Types**: Car, truck, bike support with different routing profiles
-- **Alternative Routes**: Toggle between main route and alternatives
+- **URL Route Sharing**: Share routes via URL parameters for easy collaboration
 
 ### Advanced Analytics
-- **Speed Profile Charts**: Real-time speed analysis using Solvice API step data
-- **Interactive Highlighting**: Hover over speed chart to highlight route segments on map
-- **Route Statistics**: Distance, duration, and speed metrics with hover effects
-- **Turn-by-Turn Instructions**: Embedded navigation with route visualization
+- **Always-On Traffic Comparison**: Automatic dual requests showing regular vs traffic-aware routes
+- **Speed Profile Charts**: Interactive speed analysis comparing regular and traffic conditions
+- **Route Highlighting**: Hover over speed chart to highlight route segments on map
+- **Route Statistics**: Distance, duration, and traffic delay metrics with color-coded highlighting
 
-### Expert Controls
-- **Traffic-Aware Routing**: Toggle between OSM (free) and TomTom (traffic-aware) engines
-- **Precision Control**: Switch between polyline and polyline6 geometry formats
-- **Map Style Toggle**: Light/dark theme switching
-- **Debug Tools**: Copy API request JSON for development and debugging
+### Smart Controls
+- **Automatic Traffic Integration**: No toggle needed - traffic data always included when available
+- **Address Autocomplete**: Google Places integration with intelligent search suggestions  
+- **Map Style Toggle**: Light/dark theme switching with smooth transitions
+- **Context-Aware Help**: Interactive help system with live examples
 
 ### User Experience
 - **Mobile Responsive**: Touch-friendly interface with responsive design
 - **Context Menus**: Right-click to set origin/destination anywhere on map
-- **Autocomplete Search**: Address search with geocoding (mock implementation)
-- **Real-time Feedback**: Toast notifications and loading states
-- **Comprehensive Tooltips**: Helpful guidance for all controls
+- **Smart Address Search**: Google Places autocomplete with fallback support
+- **Real-time Feedback**: Toast notifications and intelligent loading states
+- **Interactive Help**: Comprehensive help system with clickable examples
 
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 15.4.2 with App Router, TypeScript, Tailwind CSS v4
-- **Mapping**: MapLibre GL JS with Solvice Maps tiles
-- **UI Components**: shadcn/ui with Radix UI primitives
-- **Charts**: Recharts for speed profile visualization
-- **API**: Solvice Routing API with secure server-side integration
-- **Testing**: Playwright (E2E), Vitest (unit), comprehensive test coverage
-- **Development**: ESLint, TypeScript strict mode, pnpm package management
+- **Mapping**: MapLibre GL JS with Solvice Maps tiles and TomTom attribution
+- **UI Components**: shadcn/ui with Radix UI primitives and popover interactions
+- **Charts**: Recharts for dual-route speed profile visualization
+- **API Integration**: Solvice Routing API + Google Places API with secure server-side proxy
+- **Testing**: Playwright (E2E), Vitest (unit), comprehensive test coverage with 354 tests
+- **Development**: ESLint, TypeScript strict mode, automated traffic comparison
 
 ## 📋 Prerequisites
 
@@ -58,7 +60,8 @@ pnpm install
 ### 2. Environment Setup
 Create `.env.local`:
 ```bash
-SOLVICE_API_KEY=your_api_key_here
+SOLVICE_API_KEY=your_solvice_api_key_here
+GOOGLE_MAPS_API_KEY=your_google_places_api_key_here
 ```
 
 ### 3. Run Development Server
@@ -70,9 +73,23 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 ### 4. Basic Usage
 1. **Place Markers**: Click on the map to set origin (green) and destination (red)
-2. **Configure Route**: Use vehicle type toggles and expert controls in top-right
-3. **Analyze Speed**: Enable turn-by-turn steps to see speed profile chart
-4. **Interactive Exploration**: Hover over speed chart to highlight route segments
+2. **Configure Route**: Use vehicle type toggles (Car/Truck/Bike) in the control panel
+3. **View Traffic Comparison**: Speed profile automatically shows regular vs traffic routes
+4. **Share Routes**: Copy URL to share routes with URL parameters
+5. **Interactive Exploration**: Hover over speed chart to highlight route segments
+
+### 5. URL Route Sharing
+Share routes using URL parameters:
+```
+https://maps-demo.solvice.io/?origin=3.7174,51.0543&destination=3.7274,51.0643&engine=TOMTOM&steps=true
+```
+
+**Supported Parameters:**
+- `origin=lng,lat` - Start coordinates
+- `destination=lng,lat` - End coordinates  
+- `vehicle=CAR|TRUCK|BIKE` - Vehicle type
+- `engine=OSM|TOMTOM|GOOGLE` - Routing engine
+- `steps=true|false` - Show turn-by-turn instructions
 
 ## 🧪 Testing
 
@@ -158,17 +175,18 @@ maps-demo/
 
 ## 🎯 Key Features Deep Dive
 
-### Speed Profile Analysis
-- **Data Source**: Real Solvice API step/leg annotations
-- **Calculation**: distance/duration for each route segment
-- **Visualization**: Interactive area chart with hover highlighting
-- **Integration**: MapLibre geometry highlighting for selected segments
+### Traffic Comparison & Speed Analysis
+- **Always-On Traffic**: Automatic dual requests comparing regular vs traffic-aware routing
+- **Data Source**: Real Solvice API step/leg annotations with traffic integration
+- **Dual Visualization**: Interactive charts showing both regular and traffic speeds
+- **Color-Coded Results**: Green for no delay, yellow/red for traffic delays
+- **Route Integration**: MapLibre geometry highlighting for selected segments
 
-### Expert Controls
-- **MapLibre Style**: Consistent 8x8 button controls with tooltips
-- **Traffic Toggle**: Smart engine switching with timestamp management
-- **Real-time Updates**: Instant route recalculation on configuration changes
-- **Debug Support**: Copy request JSON for API development
+### Smart Controls
+- **Automatic Traffic**: Always-on traffic comparison without manual toggling
+- **Real-time Updates**: Instant route recalculation on configuration changes  
+- **Debug Support**: Copy request JSON for API development and testing
+- **Interactive Help**: Clickable examples and comprehensive parameter documentation
 
 ### Interactive Features
 - **Drag & Drop**: Real-time route updates during marker repositioning
@@ -192,28 +210,35 @@ maps-demo/
 
 ## 🛣 Roadmap
 
+### Recently Completed
+- [x] **URL Route Sharing**: Complete URL parameter system with comma-separated coordinates
+- [x] **Always-On Traffic**: Automatic traffic comparison without manual toggles
+- [x] **Google Places Integration**: Real address autocomplete with intelligent fallback
+- [x] **Interactive Help System**: Clickable examples and comprehensive documentation
+- [x] **Dual Speed Profiles**: Traffic vs regular route comparison with color coding
+
 ### Immediate Improvements
-- [ ] Replace mock geocoding with real service integration
 - [ ] Enhanced accessibility features (ARIA labels, keyboard navigation)
-- [ ] Performance optimizations for large route datasets
-- [ ] Comprehensive API documentation
+- [ ] Performance optimizations for large route datasets  
+- [ ] Advanced error recovery and retry mechanisms
+- [ ] Mobile-first responsive improvements
 
 ### Future Features
-- [ ] Route sharing and permalink generation
-- [ ] Historical route comparison
-- [ ] Advanced traffic visualization
-- [ ] Multi-waypoint routing support
-- [ ] Route optimization algorithms
+- [ ] Historical route comparison and route analytics
+- [ ] Advanced traffic visualization with real-time updates
+- [ ] Multi-waypoint routing support with optimization
+- [ ] Route export and offline capabilities
+- [ ] Integration with calendar applications for departure time optimization
 
 ## 📚 Documentation
 
 For detailed technical documentation, see:
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - System design and component relationships
+- **[URL Parameters Guide](docs/url-parameters.md)** - Complete URL sharing and parameter reference
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - System design and component relationships  
 - **[API Documentation](docs/API.md)** - Internal API reference and examples
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
 - **[Development Setup](docs/DEVELOPMENT.md)** - Detailed development environment setup
-- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - Code standards and contribution process
 
 ## 🤝 Contributing
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Analytics } from "@vercel/analytics/next";
+// import { Analytics } from "@vercel/analytics/next";
 import { MapWithContextMenu } from '@/components/map-with-context-menu';
 import { Marker } from '@/components/marker';
 import { RouteLayer } from '@/components/route-layer';
@@ -14,12 +14,13 @@ import { useGeocoding } from '@/hooks/use-geocoding';
 import { useAutoZoom } from '@/hooks/use-auto-zoom';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { toast } from 'sonner';
 import { shouldEnableTrafficComparison } from '@/lib/route-utils';
 
 type Coordinates = [number, number];
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -460,9 +461,17 @@ export default function Home() {
         route={route}
         trafficRoute={trafficRoute}
         selectedRouteIndex={hoveredRouteIndex || 0}
-        show={route && route.routes && route.routes.length > 0}
+        show={!!(route && route.routes && route.routes.length > 0)}
         onStepHover={handleStepHover}
       />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

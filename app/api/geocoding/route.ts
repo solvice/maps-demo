@@ -150,7 +150,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Check if it's a Google API error with more details
     if (error && typeof error === 'object' && 'response' in error) {
-      const googleError = error as any;
+      const googleError = error as { 
+      response?: { 
+        data?: { 
+          error_message?: string; 
+          status?: string 
+        }; 
+        status?: number 
+      }; 
+      message?: string 
+    };
       const errorMessage = googleError.response?.data?.error_message || 
                           googleError.response?.data?.status || 
                           googleError.message || 

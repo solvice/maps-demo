@@ -232,8 +232,8 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
   console.log('📈 Combined speed data sample:', combinedData.slice(0, 3));
 
   // Calculate speed stats for both routes
-  const speeds = combinedData.map(d => d.speed).filter(s => s !== null && s > 0);
-  const trafficSpeeds = combinedData.map(d => d.trafficSpeed).filter(s => s !== null && s > 0);
+  const speeds = combinedData.map(d => d.speed).filter((s): s is number => s !== null && s > 0);
+  const trafficSpeeds = combinedData.map(d => d.trafficSpeed).filter((s): s is number => s !== null && s > 0);
   
   const avgSpeed = speeds.length > 0 ? Math.round(speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length) : 0;
   const avgTrafficSpeed = trafficSpeeds.length > 0 ? Math.round(trafficSpeeds.reduce((sum, speed) => sum + speed, 0) / trafficSpeeds.length) : null;
