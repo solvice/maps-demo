@@ -318,12 +318,16 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
             >
               <defs>
                 <linearGradient id="speedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                  <stop offset="20%" stopColor="#3b82f6" stopOpacity={0.7}/>
+                  <stop offset="60%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05}/>
                 </linearGradient>
                 <linearGradient id="trafficSpeedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0.1}/>
+                  <stop offset="0%" stopColor="#f97316" stopOpacity={0.9}/>
+                  <stop offset="20%" stopColor="#f97316" stopOpacity={0.7}/>
+                  <stop offset="60%" stopColor="#f97316" stopOpacity={0.4}/>
+                  <stop offset="100%" stopColor="#f97316" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
               <XAxis 
@@ -414,7 +418,6 @@ export function SpeedProfile({ route, trafficRoute, selectedRouteIndex = 0, show
                   stroke="#f97316"
                   strokeWidth={2}
                   fill="url(#trafficSpeedGradient)"
-                  fillOpacity={0.6}
                   connectNulls={false}
                 />
               )}
