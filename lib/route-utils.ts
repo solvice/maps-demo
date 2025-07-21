@@ -60,7 +60,31 @@ export function getRouteBounds(
 }
 
 /**
- * Fits map to route bounds with optional padding
+ * Calculate appropriate zoom level based on bounds
+ */
+function calculateZoomFromBounds(
+  bounds: [[number, number], [number, number]],
+  mapWidth: number = 800,
+  mapHeight: number = 600
+): number {
+  const [[minLng, minLat], [maxLng, maxLat]] = bounds;
+  
+  const latDiff = maxLat - minLat;
+  const lngDiff = maxLng - minLng;
+  
+  // Calculate zoom based on the larger dimension
+  const latZoom = Math.log2(360 / latDiff);
+  const lngZoom = Math.log2(360 / lngDiff);
+  
+  // Use the smaller zoom to ensure the entire route fits
+  const zoom = Math.min(latZoom, lngZoom) - 1; // Subtract 1 for padding
+  
+  // Clamp zoom between reasonable values
+  return Math.max(8, Math.min(16, zoom));
+}
+
+/**
+ * Fits map to route bounds using flyTo for reliable camera movement
  */
 export function fitMapToRoute(
   map: maplibregl.Map,
@@ -71,28 +95,68 @@ export function fitMapToRoute(
     animate?: boolean;
   } = {}
 ): boolean {
-  const { geometryFormat = 'polyline', padding = 50, animate = true } = options;
+  const { geometryFormat = 'polyline', animate = true } = options;
   
+  if (!map.isStyleLoaded()) {
+    console.log('Map style not loaded yet, waiting...');
+    map.once('styledata', () => {
+      fitMapToRoute(map, route, options);
+    });
+    return false;
+  }
+
   const bounds = getRouteBounds(route, geometryFormat);
   
   if (!bounds) {
+    console.error('No bounds calculated for route');
     return false;
   }
 
   try {
-    // Use LngLatBounds constructor for better compatibility
     const [[minLng, minLat], [maxLng, maxLat]] = bounds;
-    const lngLatBounds = new maplibregl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
     
-    if (animate) {
-      map.fitBounds(lngLatBounds, { padding });
-    } else {
-      map.fitBounds(lngLatBounds, { padding, animate: false });
-    }
+    // Calculate center point
+    const centerLng = (minLng + maxLng) / 2;
+    const centerLat = (minLat + maxLat) / 2;
+    
+    // Calculate appropriate zoom level
+    const zoom = calculateZoomFromBounds(bounds);
+    
+    console.log('Flying to route bounds:', {
+      center: [centerLng, centerLat],
+      zoom,
+      bounds
+    });
+    
+    // Use flyTo for reliable camera movement
+    map.flyTo({
+      center: [centerLng, centerLat],
+      zoom,
+      duration: animate ? 1500 : 0,
+      essential: true
+    });
     
     return true;
   } catch (error) {
     console.error('Failed to fit map to route bounds:', error);
+    
+    // Fallback: try to get route coordinates and fly to first coordinate
+    try {
+      const coordinates = extractRouteCoordinates(route, geometryFormat);
+      if (coordinates.length > 0) {
+        console.log('Using fallback flyTo with first coordinate');
+        map.flyTo({
+          center: coordinates[0],
+          zoom: 12,
+          duration: animate ? 1000 : 0,
+          essential: true
+        });
+        return true;
+      }
+    } catch (fallbackError) {
+      console.error('Fallback flyTo also failed:', fallbackError);
+    }
+    
     return false;
   }
 }

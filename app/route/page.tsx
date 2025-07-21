@@ -12,6 +12,7 @@ import { RouteConfig } from '@/components/route-config';
 import { useRoute } from '@/hooks/use-route';
 import { useGeocoding } from '@/hooks/use-geocoding';
 import { useAutoZoom } from '@/hooks/use-auto-zoom';
+import { useMapContext } from '@/contexts/map-context';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -61,6 +62,7 @@ function HomeContent() {
     calculateRoute 
   } = useRoute();
   const { loading: geocodingLoading, error: geocodingError, getAddressFromCoordinates, getCoordinatesFromAddress } = useGeocoding();
+  const map = useMapContext();
   
   // Parse URL parameters on initial load
   useEffect(() => {
@@ -147,6 +149,49 @@ function HomeContent() {
   
   // Auto-zoom to route when calculated
   useAutoZoom(route, { geometryFormat: routeConfig.geometries });
+
+  // Auto-zoom to markers when both origin and destination are set (before route calculation)
+  useEffect(() => {
+    if (origin && destination && !route && map) {
+      if (map.isStyleLoaded()) {
+        // Calculate bounds for the two points
+        const minLng = Math.min(origin[0], destination[0]);
+        const maxLng = Math.max(origin[0], destination[0]);
+        const minLat = Math.min(origin[1], destination[1]);
+        const maxLat = Math.max(origin[1], destination[1]);
+        
+        // Add some padding to the bounds
+        const padding = 0.01; // ~1km padding
+        const bounds: [[number, number], [number, number]] = [
+          [minLng - padding, minLat - padding],
+          [maxLng + padding, maxLat + padding]
+        ];
+        
+        // Calculate center and zoom
+        const centerLng = (minLng + maxLng) / 2;
+        const centerLat = (minLat + maxLat) / 2;
+        
+        const latDiff = maxLat - minLat + (padding * 2);
+        const lngDiff = maxLng - minLng + (padding * 2);
+        const latZoom = Math.log2(360 / latDiff);
+        const lngZoom = Math.log2(360 / lngDiff);
+        const zoom = Math.max(10, Math.min(15, Math.min(latZoom, lngZoom) - 1));
+        
+        console.log('Zooming to markers:', {
+          center: [centerLng, centerLat],
+          zoom,
+          bounds
+        });
+        
+        map.flyTo({
+          center: [centerLng, centerLat],
+          zoom,
+          duration: 1000,
+          essential: true
+        });
+      }
+    }
+  }, [origin, destination, route, map]);
 
   const handleMapClick = (coords: Coordinates) => {
     // Normal click behavior
