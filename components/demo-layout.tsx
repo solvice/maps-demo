@@ -11,9 +11,10 @@ interface DemoLayoutProps {
   sidePanel?: ReactNode;
   customTitlePane?: ReactNode;
   onClick?: (coordinates: [number, number]) => void;
+  disableContextMenu?: boolean;
 }
 
-export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: DemoLayoutProps) {
+export function DemoLayout({ children, sidePanel, customTitlePane, onClick, disableContextMenu }: DemoLayoutProps) {
   const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/grayscale.json');
 
   return (
@@ -31,6 +32,7 @@ export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: De
           initialStyle={mapStyle}
           onStyleChange={setMapStyle}
           onClick={onClick}
+          disableContextMenu={disableContextMenu}
         >
           {/* Title Pane - centered at top */}
           {customTitlePane || <DemoTitlePane />}

@@ -22,6 +22,7 @@ interface MapProps {
   hasOrigin?: boolean;      // NEW - for context menu logic
   hasDestination?: boolean; // NEW - for context menu logic
   waypointCount?: number;   // NEW - for context menu display
+  disableContextMenu?: boolean; // NEW - disable context menu
   children?: React.ReactNode;
 }
 
@@ -48,6 +49,7 @@ export function MapWithContextMenu({
   hasOrigin = false,
   hasDestination = false,
   waypointCount = 0,
+  disableContextMenu = false,
   children
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -100,21 +102,23 @@ export function MapWithContextMenu({
         });
       }
 
-      // Add context menu handler
-      map.current.on('contextmenu', (e) => {
-        e.preventDefault();
-        const { lng, lat } = e.lngLat;
-        const { x, y } = e.point;
-        
-        setContextMenu({
-          visible: true,
-          x: x,
-          y: y,
-          coordinates: [lng, lat],
+      // Add context menu handler (if not disabled)
+      if (!disableContextMenu) {
+        map.current.on('contextmenu', (e) => {
+          e.preventDefault();
+          const { lng, lat } = e.lngLat;
+          const { x, y } = e.point;
+          
+          setContextMenu({
+            visible: true,
+            x: x,
+            y: y,
+            coordinates: [lng, lat],
+          });
+          
+          console.log('Map context menu at:', { lng, lat, x, y });
         });
-        
-        console.log('Map context menu at:', { lng, lat, x, y });
-      });
+      }
 
       // Handle resize and orientation changes
       const handleResize = () => {
@@ -226,7 +230,7 @@ export function MapWithContextMenu({
         {isLoaded && children}
         
         {/* Custom Context Menu styled like shadcn/ui */}
-        {contextMenu.visible && (
+        {!disableContextMenu && contextMenu.visible && (
           <div
             className={cn(
               "fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
