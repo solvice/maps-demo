@@ -257,24 +257,28 @@ export const RoutePointValidation = {
   /**
    * Validate a route point object
    */
-  isValidRoutePoint(point: any): point is RoutePoint {
+  isValidRoutePoint(point: unknown): point is RoutePoint {
+    if (typeof point !== 'object' || point === null) {
+      return false;
+    }
+    
+    const p = point as Record<string, unknown>;
+    
     return (
-      typeof point === 'object' &&
-      point !== null &&
-      typeof point.id === 'string' &&
-      Array.isArray(point.coordinates) &&
-      point.coordinates.length === 2 &&
-      typeof point.coordinates[0] === 'number' &&
-      typeof point.coordinates[1] === 'number' &&
-      ['origin', 'waypoint', 'destination'].includes(point.type) &&
-      (point.address === undefined || typeof point.address === 'string')
+      typeof p.id === 'string' &&
+      Array.isArray(p.coordinates) &&
+      p.coordinates.length === 2 &&
+      typeof p.coordinates[0] === 'number' &&
+      typeof p.coordinates[1] === 'number' &&
+      ['origin', 'waypoint', 'destination'].includes(p.type as string) &&
+      (p.address === undefined || typeof p.address === 'string')
     );
   },
 
   /**
    * Validate an array of route points
    */
-  isValidRoutePointArray(points: any): points is RoutePoint[] {
+  isValidRoutePointArray(points: unknown): points is RoutePoint[] {
     return (
       Array.isArray(points) &&
       points.every(point => this.isValidRoutePoint(point))
@@ -293,7 +297,7 @@ export const RoutePointValidation = {
   /**
    * Sanitize route points array by removing duplicates and invalid points
    */
-  sanitize(points: any[]): RoutePoint[] {
+  sanitize(points: unknown[]): RoutePoint[] {
     const validPoints = points.filter(point => this.isValidRoutePoint(point));
     
     // Ensure only one origin and one destination
