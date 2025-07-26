@@ -204,12 +204,47 @@ function RouteContent() {
     }
   }, [origin, destination, originSelected, destinationSelected, routeConfig, calculateRoute, isDragging]);
 
-  // Success notifications
+  // Success notifications and auto-zoom to route
   useEffect(() => {
     if (route && route.routes && route.routes[0] && calculationTime !== null) {
       toast.success(`Route calculated in ${calculationTime}ms`);
+      
+      // Auto-zoom to fit the calculated route when both origin and destination are set
+      if (map && origin && destination && originSelected && destinationSelected) {
+        setTimeout(() => {
+          const bounds = new maplibregl.LngLatBounds();
+          bounds.extend(origin);
+          bounds.extend(destination);
+          
+          // Also include any route waypoints if available
+          if (route.routes[0].geometry) {
+            try {
+              // Decode polyline geometry to get all route points for better bounds
+              const routeCoordinates = route.routes[0].geometry;
+              if (typeof routeCoordinates === 'string') {
+                // If it's a polyline string, we'll just use origin/destination for bounds
+                // as decoding would require additional library
+              } else if (Array.isArray(routeCoordinates)) {
+                // If it's already coordinates array, extend bounds with all points
+                routeCoordinates.forEach((coord: [number, number]) => {
+                  bounds.extend(coord);
+                });
+              }
+            } catch (e) {
+              // Fallback to just using origin/destination
+              console.log('Using origin/destination bounds as fallback');
+            }
+          }
+          
+          map.fitBounds(bounds, {
+            padding: { top: 80, bottom: 80, left: 80, right: 80 },
+            duration: 1000,
+            maxZoom: 16
+          });
+        }, 300); // Small delay to ensure route is rendered
+      }
     }
-  }, [route, calculationTime]);
+  }, [route, calculationTime, map, origin, destination, originSelected, destinationSelected]);
 
   // Error notifications
   useEffect(() => {
