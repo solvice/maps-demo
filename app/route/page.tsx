@@ -216,25 +216,8 @@ function RouteContent() {
           bounds.extend(origin);
           bounds.extend(destination);
           
-          // Also include any route waypoints if available
-          if (route.routes[0].geometry) {
-            try {
-              // Decode polyline geometry to get all route points for better bounds
-              const routeCoordinates = route.routes[0].geometry;
-              if (typeof routeCoordinates === 'string') {
-                // If it's a polyline string, we'll just use origin/destination for bounds
-                // as decoding would require additional library
-              } else if (Array.isArray(routeCoordinates)) {
-                // If it's already coordinates array, extend bounds with all points
-                routeCoordinates.forEach((coord: [number, number]) => {
-                  bounds.extend(coord);
-                });
-              }
-            } catch (e) {
-              // Fallback to just using origin/destination
-              console.log('Using origin/destination bounds as fallback');
-            }
-          }
+          // Keep it simple - just use origin and destination for bounds
+          // This avoids potential issues with different route geometry formats
           
           map.fitBounds(bounds, {
             padding: { top: 80, bottom: 80, left: 80, right: 80 },
