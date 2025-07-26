@@ -28,6 +28,7 @@ function RouteContent() {
   const [destinationText, setDestinationText] = useState<string>('');
   const [originSelected, setOriginSelected] = useState<boolean>(false);
   const [destinationSelected, setDestinationSelected] = useState<boolean>(false);
+  const [shouldZoomOnChange, setShouldZoomOnChange] = useState<boolean>(false);
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
@@ -87,6 +88,7 @@ function RouteContent() {
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setOrigin(coords);
             setOriginSelected(true);
+            setShouldZoomOnChange(true); // Enable zoom for URL parameter initialization
             getAddressFromCoordinates(coords).then(address => {
               setOriginText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -105,6 +107,7 @@ function RouteContent() {
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setDestination(coords);
             setDestinationSelected(true);
+            setShouldZoomOnChange(true); // Enable zoom for URL parameter initialization
             getAddressFromCoordinates(coords).then(address => {
               setDestinationText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -132,9 +135,9 @@ function RouteContent() {
     setIsInitialized(true);
   }, [searchParams, getAddressFromCoordinates, isInitialized]);
 
-  // Map flyTo effect
+  // Map flyTo effect - only zoom when set via address input, not map clicks
   useEffect(() => {
-    if (isInitialized && map) {
+    if (isInitialized && map && shouldZoomOnChange) {
       if (flyToTimeoutRef.current) {
         clearTimeout(flyToTimeoutRef.current);
       }
@@ -157,6 +160,7 @@ function RouteContent() {
             duration: 1000
           });
         }
+        setShouldZoomOnChange(false); // Reset the flag after zooming
       }, 200);
     }
     
@@ -165,7 +169,7 @@ function RouteContent() {
         clearTimeout(flyToTimeoutRef.current);
       }
     };
-  }, [isInitialized, origin, destination, map]);
+  }, [isInitialized, origin, destination, map, shouldZoomOnChange]);
 
   // URL parameter updates
   useEffect(() => {
@@ -298,12 +302,14 @@ function RouteContent() {
     setDestination(null);
     setDestinationText('');
     setDestinationSelected(false);
+    setShouldZoomOnChange(true); // Enable zoom for address input
   };
 
   const handleDestinationSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
     setDestination(result.coordinates);
     setDestinationText(result.address);
     setDestinationSelected(true);
+    setShouldZoomOnChange(true); // Enable zoom for address input
   };
 
   const handleOriginTextChange = (value: string) => {
@@ -317,6 +323,7 @@ function RouteContent() {
       if (coordinates) {
         setOrigin(coordinates);
         setOriginSelected(true);
+        setShouldZoomOnChange(true); // Enable zoom for address input
       } else {
         setOrigin(null);
         setOriginSelected(false);
@@ -332,6 +339,7 @@ function RouteContent() {
       if (coordinates) {
         setDestination(coordinates);
         setDestinationSelected(true);
+        setShouldZoomOnChange(true); // Enable zoom for address input
       } else {
         setDestination(null);
         setDestinationSelected(false);
