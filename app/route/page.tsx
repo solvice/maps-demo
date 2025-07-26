@@ -14,7 +14,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { toast } from 'sonner';
 import maplibregl from 'maplibre-gl';
-import { shouldEnableTrafficComparison } from '@/lib/route-utils';
+import { shouldEnableTrafficComparison, fitMapToRoute } from '@/lib/route-utils';
 
 type Coordinates = [number, number];
 
@@ -28,13 +28,11 @@ function RouteContent() {
   const [destinationText, setDestinationText] = useState<string>('');
   const [originSelected, setOriginSelected] = useState<boolean>(false);
   const [destinationSelected, setDestinationSelected] = useState<boolean>(false);
-  const [shouldZoomOnChange, setShouldZoomOnChange] = useState<boolean>(false);
   const [, setClickCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const [hoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
-  const flyToTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
   const [highlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
@@ -88,7 +86,6 @@ function RouteContent() {
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setOrigin(coords);
             setOriginSelected(true);
-            setShouldZoomOnChange(true); // Enable zoom for URL parameter initialization
             getAddressFromCoordinates(coords).then(address => {
               setOriginText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -107,7 +104,6 @@ function RouteContent() {
           if (!isNaN(coords[0]) && !isNaN(coords[1])) {
             setDestination(coords);
             setDestinationSelected(true);
-            setShouldZoomOnChange(true); // Enable zoom for URL parameter initialization
             getAddressFromCoordinates(coords).then(address => {
               setDestinationText(address || `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
             });
@@ -135,41 +131,7 @@ function RouteContent() {
     setIsInitialized(true);
   }, [searchParams, getAddressFromCoordinates, isInitialized]);
 
-  // Map flyTo effect - only zoom when set via address input, not map clicks
-  useEffect(() => {
-    if (isInitialized && map && shouldZoomOnChange) {
-      if (flyToTimeoutRef.current) {
-        clearTimeout(flyToTimeoutRef.current);
-      }
-      
-      flyToTimeoutRef.current = setTimeout(() => {
-        if (origin && destination) {
-          const bounds = new maplibregl.LngLatBounds();
-          bounds.extend(origin);
-          bounds.extend(destination);
-          
-          map.fitBounds(bounds, {
-            padding: { top: 100, bottom: 100, left: 100, right: 100 },
-            duration: 1000,
-            maxZoom: 16
-          });
-        } else if (origin) {
-          map.flyTo({
-            center: origin,
-            zoom: 14,
-            duration: 1000
-          });
-        }
-        setShouldZoomOnChange(false); // Reset the flag after zooming
-      }, 200);
-    }
-    
-    return () => {
-      if (flyToTimeoutRef.current) {
-        clearTimeout(flyToTimeoutRef.current);
-      }
-    };
-  }, [isInitialized, origin, destination, map, shouldZoomOnChange]);
+  // Note: Address input zoom removed - only route creation should trigger flyTo
 
   // URL parameter updates
   useEffect(() => {
@@ -209,25 +171,17 @@ function RouteContent() {
     if (route && route.routes && route.routes[0] && calculationTime !== null) {
       toast.success(`Route calculated in ${calculationTime}ms`);
       
-      // Auto-zoom to fit the calculated route when both origin and destination are set
+      // Auto-zoom to fit the calculated route - this is the ONLY use of flyTo
       if (map && origin && destination && originSelected && destinationSelected) {
         setTimeout(() => {
-          const bounds = new maplibregl.LngLatBounds();
-          bounds.extend(origin);
-          bounds.extend(destination);
-          
-          // Keep it simple - just use origin and destination for bounds
-          // This avoids potential issues with different route geometry formats
-          
-          map.fitBounds(bounds, {
-            padding: { top: 80, bottom: 80, left: 80, right: 80 },
-            duration: 1000,
-            maxZoom: 16
+          fitMapToRoute(map, route, {
+            geometryFormat: routeConfig.geometries,
+            animate: true
           });
         }, 300); // Small delay to ensure route is rendered
       }
     }
-  }, [route, calculationTime, map, origin, destination, originSelected, destinationSelected]);
+  }, [route, calculationTime, map, origin, destination, originSelected, destinationSelected, routeConfig.geometries]);
 
   // Error notifications
   useEffect(() => {
@@ -320,14 +274,12 @@ function RouteContent() {
     setDestination(null);
     setDestinationText('');
     setDestinationSelected(false);
-    setShouldZoomOnChange(true); // Enable zoom for address input
   };
 
   const handleDestinationSelect = (result: { coordinates: Coordinates; address: string; confidence: number }) => {
     setDestination(result.coordinates);
     setDestinationText(result.address);
     setDestinationSelected(true);
-    setShouldZoomOnChange(true); // Enable zoom for address input
   };
 
   const handleOriginTextChange = (value: string) => {
@@ -341,8 +293,7 @@ function RouteContent() {
       if (coordinates) {
         setOrigin(coordinates);
         setOriginSelected(true);
-        setShouldZoomOnChange(true); // Enable zoom for address input
-      } else {
+          } else {
         setOrigin(null);
         setOriginSelected(false);
       }
@@ -357,8 +308,7 @@ function RouteContent() {
       if (coordinates) {
         setDestination(coordinates);
         setDestinationSelected(true);
-        setShouldZoomOnChange(true); // Enable zoom for address input
-      } else {
+          } else {
         setDestination(null);
         setDestinationSelected(false);
       }
