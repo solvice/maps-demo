@@ -14,7 +14,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { toast } from 'sonner';
 import maplibregl from 'maplibre-gl';
-import { shouldEnableTrafficComparison } from '@/lib/route-utils';
+import { shouldEnableTrafficComparison, fitMapToRoute } from '@/lib/route-utils';
 
 type Coordinates = [number, number];
 
@@ -33,7 +33,6 @@ function RouteContent() {
   const isDraggingRef = useRef(false);
   const [hoveredRouteIndex] = useState<number | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
-  const flyToTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [highlightedStepGeometry, setHighlightedStepGeometry] = useState<string | null>(null);
   const [highlightedStepIndex] = useState<number | null>(null);
   const [routeConfig, setRouteConfig] = useState<RouteConfig>({
@@ -132,40 +131,7 @@ function RouteContent() {
     setIsInitialized(true);
   }, [searchParams, getAddressFromCoordinates, isInitialized]);
 
-  // Map flyTo effect
-  useEffect(() => {
-    if (isInitialized && map) {
-      if (flyToTimeoutRef.current) {
-        clearTimeout(flyToTimeoutRef.current);
-      }
-      
-      flyToTimeoutRef.current = setTimeout(() => {
-        if (origin && destination) {
-          const bounds = new maplibregl.LngLatBounds();
-          bounds.extend(origin);
-          bounds.extend(destination);
-          
-          map.fitBounds(bounds, {
-            padding: { top: 100, bottom: 100, left: 100, right: 100 },
-            duration: 1000,
-            maxZoom: 16
-          });
-        } else if (origin) {
-          map.flyTo({
-            center: origin,
-            zoom: 14,
-            duration: 1000
-          });
-        }
-      }, 200);
-    }
-    
-    return () => {
-      if (flyToTimeoutRef.current) {
-        clearTimeout(flyToTimeoutRef.current);
-      }
-    };
-  }, [isInitialized, origin, destination, map]);
+  // Note: Address input zoom removed - only route creation should trigger flyTo
 
   // URL parameter updates
   useEffect(() => {
@@ -200,12 +166,22 @@ function RouteContent() {
     }
   }, [origin, destination, originSelected, destinationSelected, routeConfig, calculateRoute, isDragging]);
 
-  // Success notifications
+  // Success notifications and auto-zoom to route
   useEffect(() => {
     if (route && route.routes && route.routes[0] && calculationTime !== null) {
       toast.success(`Route calculated in ${calculationTime}ms`);
+      
+      // Auto-zoom to fit the calculated route - this is the ONLY use of flyTo
+      if (map && origin && destination && originSelected && destinationSelected) {
+        setTimeout(() => {
+          fitMapToRoute(map, route, {
+            geometryFormat: routeConfig.geometries,
+            animate: true
+          });
+        }, 300); // Small delay to ensure route is rendered
+      }
     }
-  }, [route, calculationTime]);
+  }, [route, calculationTime, map, origin, destination, originSelected, destinationSelected, routeConfig.geometries]);
 
   // Error notifications
   useEffect(() => {
@@ -317,7 +293,7 @@ function RouteContent() {
       if (coordinates) {
         setOrigin(coordinates);
         setOriginSelected(true);
-      } else {
+          } else {
         setOrigin(null);
         setOriginSelected(false);
       }
@@ -332,7 +308,7 @@ function RouteContent() {
       if (coordinates) {
         setDestination(coordinates);
         setDestinationSelected(true);
-      } else {
+          } else {
         setDestination(null);
         setDestinationSelected(false);
       }

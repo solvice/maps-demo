@@ -36,18 +36,7 @@ export function SpeedChart({
         onStepHover(payload.geometry || null, payload.stepIndex);
       }
       
-      // FlyTo corresponding location on map
-      if (map && map.isStyleLoaded()) {
-        const coords = getCoordinatesAtDistance(payload.distance);
-        if (coords) {
-          map.flyTo({
-            center: coords,
-            zoom: Math.max(map.getZoom(), 14), // Don't zoom out, only zoom in if needed
-            duration: 500, // Quick transition
-            essential: false // Allow interruption
-          });
-        }
-      }
+      // Note: Map flyTo on chart hover has been disabled per user request
     }
   };
 
