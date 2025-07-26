@@ -477,7 +477,21 @@ function UnifiedDemoContent() {
   );
 
   return (
-    <DemoLayout sidePanel={sidePanel} customTitlePane={<TitlePane />} onClick={handleMapClick}>
+    <DemoLayout 
+      sidePanel={sidePanel} 
+      customTitlePane={<TitlePane />} 
+      onClick={handleMapClick}
+      onSetOrigin={handleSetOrigin}
+      onSetDestination={handleSetDestination}
+      onAddWaypoint={(coords) => {
+        // For now, treat waypoint as destination since we're using legacy system
+        handleSetDestination(coords);
+        toast.success('Waypoint added as destination! Multi-waypoint routing coming soon.');
+      }}
+      hasOrigin={activeDemo === 'route' && !!origin}
+      hasDestination={activeDemo === 'route' && !!destination}
+      waypointCount={0}
+    >
       {/* Route Demo Content */}
       {activeDemo === 'route' && (
         <>

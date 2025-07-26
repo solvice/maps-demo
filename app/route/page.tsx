@@ -352,7 +352,19 @@ function RouteContent() {
 
 
   return (
-    <DemoLayout onClick={handleMapClick}>
+    <DemoLayout 
+      onClick={handleMapClick}
+      onSetOrigin={handleSetOrigin}
+      onSetDestination={handleSetDestination}
+      onAddWaypoint={(coords) => {
+        // For now, treat waypoint as destination since we're using legacy system
+        handleSetDestination(coords);
+        toast.success('Waypoint added as destination! Multi-waypoint routing coming soon.');
+      }}
+      hasOrigin={!!origin}
+      hasDestination={!!destination}
+      waypointCount={0}
+    >
       <RouteDemoControls
         origin={origin}
         destination={destination}
