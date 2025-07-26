@@ -17,7 +17,12 @@ interface MapProps {
   onClick?: (coordinates: [number, number]) => void;
   onSetOrigin?: (coordinates: [number, number]) => void;
   onSetDestination?: (coordinates: [number, number]) => void;
+  onAddWaypoint?: (coordinates: [number, number]) => void;  // NEW
   onMapReady?: (map: maplibregl.Map) => void;
+  hasOrigin?: boolean;      // NEW - for context menu logic
+  hasDestination?: boolean; // NEW - for context menu logic
+  waypointCount?: number;   // NEW - for context menu display
+  disableContextMenu?: boolean; // NEW - disable context menu
   children?: React.ReactNode;
 }
 
@@ -39,7 +44,12 @@ export function MapWithContextMenu({
   onClick,
   onSetOrigin,
   onSetDestination,
+  onAddWaypoint,
   onMapReady,
+  hasOrigin = false,
+  hasDestination = false,
+  waypointCount = 0,
+  disableContextMenu = false,
   children
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -92,21 +102,23 @@ export function MapWithContextMenu({
         });
       }
 
-      // Add context menu handler
-      map.current.on('contextmenu', (e) => {
-        e.preventDefault();
-        const { lng, lat } = e.lngLat;
-        const { x, y } = e.point;
-        
-        setContextMenu({
-          visible: true,
-          x: x,
-          y: y,
-          coordinates: [lng, lat],
+      // Add context menu handler (if not disabled)
+      if (!disableContextMenu) {
+        map.current.on('contextmenu', (e) => {
+          e.preventDefault();
+          const { lng, lat } = e.lngLat;
+          const { x, y } = e.point;
+          
+          setContextMenu({
+            visible: true,
+            x: x,
+            y: y,
+            coordinates: [lng, lat],
+          });
+          
+          console.log('Map context menu at:', { lng, lat, x, y });
         });
-        
-        console.log('Map context menu at:', { lng, lat, x, y });
-      });
+      }
 
       // Handle resize and orientation changes
       const handleResize = () => {
@@ -199,6 +211,14 @@ export function MapWithContextMenu({
     setContextMenu(prev => ({ ...prev, visible: false }));
   };
 
+  const handleAddWaypoint = () => {
+    if (contextMenu.coordinates && onAddWaypoint) {
+      onAddWaypoint(contextMenu.coordinates);
+      console.log('Adding waypoint from context menu:', contextMenu.coordinates);
+    }
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
   return (
     <MapProvider value={mapInstance}>
       <div className="relative h-full w-full">
@@ -210,7 +230,7 @@ export function MapWithContextMenu({
         {isLoaded && children}
         
         {/* Custom Context Menu styled like shadcn/ui */}
-        {contextMenu.visible && (
+        {!disableContextMenu && contextMenu.visible && (
           <div
             className={cn(
               "fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
@@ -235,6 +255,23 @@ export function MapWithContextMenu({
               <div className="w-3 h-3 bg-green-500 rounded-full" />
               Origin
             </div>
+            {/* Show waypoint option when we have origin but not destination, or when we have both */}
+            {(hasOrigin && onAddWaypoint) && (
+              <div
+                className={cn(
+                  "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
+                  "transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                  "hover:bg-accent hover:text-accent-foreground"
+                )}
+                onClick={handleAddWaypoint}
+                data-testid="context-add-waypoint"
+              >
+                <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-[8px] font-bold">{waypointCount + 1}</span>
+                </div>
+                {hasDestination ? 'Insert waypoint here' : 'Add waypoint here'}
+              </div>
+            )}
             <div
               className={cn(
                 "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
@@ -249,7 +286,10 @@ export function MapWithContextMenu({
             </div>
             <div className="h-px my-1 -mx-1 bg-border"></div>
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              Right-click anywhere on map
+              {hasOrigin && hasDestination 
+                ? `Route: ${waypointCount + 2} stops` 
+                : "Right-click to add route points"
+              }
             </div>
           </div>
         )}

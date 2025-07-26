@@ -11,9 +11,29 @@ interface DemoLayoutProps {
   sidePanel?: ReactNode;
   customTitlePane?: ReactNode;
   onClick?: (coordinates: [number, number]) => void;
+  disableContextMenu?: boolean;
+  // Multi-waypoint context menu props
+  onSetOrigin?: (coordinates: [number, number]) => void;
+  onSetDestination?: (coordinates: [number, number]) => void;
+  onAddWaypoint?: (coordinates: [number, number]) => void;
+  hasOrigin?: boolean;
+  hasDestination?: boolean;
+  waypointCount?: number;
 }
 
-export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: DemoLayoutProps) {
+export function DemoLayout({ 
+  children, 
+  sidePanel, 
+  customTitlePane, 
+  onClick, 
+  disableContextMenu,
+  onSetOrigin,
+  onSetDestination,
+  onAddWaypoint,
+  hasOrigin,
+  hasDestination,
+  waypointCount
+}: DemoLayoutProps) {
   const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/grayscale.json');
 
   return (
@@ -31,6 +51,13 @@ export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: De
           initialStyle={mapStyle}
           onStyleChange={setMapStyle}
           onClick={onClick}
+          disableContextMenu={disableContextMenu}
+          onSetOrigin={onSetOrigin}
+          onSetDestination={onSetDestination}
+          onAddWaypoint={onAddWaypoint}
+          hasOrigin={hasOrigin}
+          hasDestination={hasDestination}
+          waypointCount={waypointCount}
         >
           {/* Title Pane - centered at top */}
           {customTitlePane || <DemoTitlePane />}

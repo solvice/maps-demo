@@ -213,7 +213,7 @@ function TableContent() {
   }, []);
 
   return (
-    <DemoLayout onClick={handleMapClick}>
+    <DemoLayout onClick={handleMapClick} disableContextMenu={true}>
       <TableDemoControls
         tableRequestText={tableRequestText}
         onTableRequestChange={handleTableRequestChange}
