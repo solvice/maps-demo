@@ -11,9 +11,14 @@ interface DemoLayoutProps {
   sidePanel?: ReactNode;
   customTitlePane?: ReactNode;
   onClick?: (coordinates: [number, number]) => void;
+  onSetOrigin?: (coordinates: [number, number]) => void;
+  onSetDestination?: (coordinates: [number, number]) => void;
+  onAddWaypoint?: (coordinates: [number, number]) => void;
+  hasOrigin?: boolean;
+  hasDestination?: boolean;
 }
 
-export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: DemoLayoutProps) {
+export function DemoLayout({ children, sidePanel, customTitlePane, onClick, onSetOrigin, onSetDestination, onAddWaypoint, hasOrigin, hasDestination }: DemoLayoutProps) {
   const [mapStyle, setMapStyle] = useState('https://cdn.solvice.io/styles/grayscale.json');
 
   return (
@@ -31,6 +36,11 @@ export function DemoLayout({ children, sidePanel, customTitlePane, onClick }: De
           initialStyle={mapStyle}
           onStyleChange={setMapStyle}
           onClick={onClick}
+          onSetOrigin={onSetOrigin}
+          onSetDestination={onSetDestination}
+          onAddWaypoint={onAddWaypoint}
+          hasOrigin={hasOrigin}
+          hasDestination={hasDestination}
         >
           {/* Title Pane - centered at top */}
           {customTitlePane || <DemoTitlePane />}

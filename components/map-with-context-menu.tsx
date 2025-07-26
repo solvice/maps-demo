@@ -17,8 +17,11 @@ interface MapProps {
   onClick?: (coordinates: [number, number]) => void;
   onSetOrigin?: (coordinates: [number, number]) => void;
   onSetDestination?: (coordinates: [number, number]) => void;
+  onAddWaypoint?: (coordinates: [number, number]) => void;
   onMapReady?: (map: maplibregl.Map) => void;
   children?: React.ReactNode;
+  hasOrigin?: boolean;
+  hasDestination?: boolean;
 }
 
 interface ContextMenuState {
@@ -39,8 +42,11 @@ export function MapWithContextMenu({
   onClick,
   onSetOrigin,
   onSetDestination,
+  onAddWaypoint,
   onMapReady,
-  children
+  children,
+  hasOrigin = false,
+  hasDestination = false
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -199,6 +205,14 @@ export function MapWithContextMenu({
     setContextMenu(prev => ({ ...prev, visible: false }));
   };
 
+  const handleAddWaypoint = () => {
+    if (contextMenu.coordinates && onAddWaypoint) {
+      onAddWaypoint(contextMenu.coordinates);
+      console.log('Adding waypoint from context menu:', contextMenu.coordinates);
+    }
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
   return (
     <MapProvider value={mapInstance}>
       <div className="relative h-full w-full">
@@ -247,6 +261,21 @@ export function MapWithContextMenu({
               <div className="w-3 h-3 bg-red-500 rounded-full" />
               Destination
             </div>
+            {/* Show waypoint option when appropriate */}
+            {hasOrigin && onAddWaypoint && (
+              <div
+                className={cn(
+                  "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
+                  "transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                  "hover:bg-accent hover:text-accent-foreground"
+                )}
+                onClick={handleAddWaypoint}
+                data-testid="context-add-waypoint"
+              >
+                <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                {hasDestination ? 'Insert waypoint here' : 'Add waypoint here'}
+              </div>
+            )}
             <div className="h-px my-1 -mx-1 bg-border"></div>
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
               Right-click anywhere on map

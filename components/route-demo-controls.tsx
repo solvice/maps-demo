@@ -5,6 +5,7 @@ import { SpeedProfile } from './speed-profile';
 import { Coordinates } from '@/lib/coordinates';
 import { RouteResponse } from '@/lib/solvice-api';
 import { RouteConfig } from './route-config';
+import { RoutePoint } from '@/lib/route-point';
 
 interface RouteDemoControlsProps {
   origin: Coordinates | null;
@@ -26,6 +27,8 @@ interface RouteDemoControlsProps {
   showInstructions: boolean;
   onShowInstructionsChange: (show: boolean) => void;
   onHighlightedStepGeometryChange: (geometry: string | null) => void;
+  routePoints?: RoutePoint[];
+  onRemoveWaypoint?: (waypointId: string) => void;
 }
 
 export function RouteDemoControls({
@@ -48,6 +51,8 @@ export function RouteDemoControls({
   showInstructions,
   onShowInstructionsChange,
   onHighlightedStepGeometryChange,
+  routePoints,
+  onRemoveWaypoint,
 }: RouteDemoControlsProps) {
   return (
     <>
@@ -72,6 +77,8 @@ export function RouteDemoControls({
         onShowInstructionsChange={onShowInstructionsChange}
         originCoordinates={origin}
         destinationCoordinates={destination}
+        routePoints={routePoints}
+        onRemoveWaypoint={onRemoveWaypoint}
       />
       
       {(route || trafficRoute) && (

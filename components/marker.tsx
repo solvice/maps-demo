@@ -7,20 +7,24 @@ import { useMapContext } from "@/contexts/map-context";
 
 interface MarkerProps {
   coordinates: Coordinates;
-  type: "origin" | "destination";
+  type: "origin" | "destination" | "waypoint";
+  content?: string;
   onClick?: () => void;
-  onDragStart?: (type: "origin" | "destination") => void;
-  onDrag?: (coordinates: Coordinates, type: "origin" | "destination") => void;
+  onDelete?: () => void;
+  onDragStart?: (type: "origin" | "destination" | "waypoint") => void;
+  onDrag?: (coordinates: Coordinates, type: "origin" | "destination" | "waypoint") => void;
   onDragEnd?: (
     coordinates: Coordinates,
-    type: "origin" | "destination",
+    type: "origin" | "destination" | "waypoint",
   ) => void;
 }
 
 export function Marker({
   coordinates,
   type,
+  content,
   onClick,
+  onDelete,
   onDragStart,
   onDrag,
   onDragEnd,
@@ -49,20 +53,36 @@ export function Marker({
         z-index: 1000 !important;
       `;
 
-      // Add a white dot in the center
-      const dot = document.createElement("div");
-      dot.style.cssText = `
-        width: 8px !important;
-        height: 8px !important;
-        background-color: white !important;
-        border-radius: 50% !important;
-        position: absolute !important;
-        top: 40% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-      `;
-      el.appendChild(dot);
-    } else {
+      // Add content or default dot
+      if (content) {
+        const label = document.createElement("div");
+        label.textContent = content;
+        label.style.cssText = `
+          color: white !important;
+          font-size: 12px !important;
+          font-weight: bold !important;
+          position: absolute !important;
+          top: 40% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          text-align: center !important;
+        `;
+        el.appendChild(label);
+      } else {
+        const dot = document.createElement("div");
+        dot.style.cssText = `
+          width: 8px !important;
+          height: 8px !important;
+          background-color: white !important;
+          border-radius: 50% !important;
+          position: absolute !important;
+          top: 40% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+        `;
+        el.appendChild(dot);
+      }
+    } else if (type === "destination") {
       el.style.cssText = `
         width: 30px !important;
         height: 30px !important;
@@ -75,19 +95,91 @@ export function Marker({
         z-index: 1000 !important;
       `;
 
-      // Add a white dot in the center
-      const dot = document.createElement("div");
-      dot.style.cssText = `
-        width: 8px !important;
-        height: 8px !important;
-        background-color: white !important;
+      // Add content or default dot
+      if (content) {
+        const label = document.createElement("div");
+        label.textContent = content;
+        label.style.cssText = `
+          color: white !important;
+          font-size: 12px !important;
+          font-weight: bold !important;
+          position: absolute !important;
+          top: 40% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          text-align: center !important;
+        `;
+        el.appendChild(label);
+      } else {
+        const dot = document.createElement("div");
+        dot.style.cssText = `
+          width: 8px !important;
+          height: 8px !important;
+          background-color: white !important;
+          border-radius: 50% !important;
+          position: absolute !important;
+          top: 40% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+        `;
+        el.appendChild(dot);
+      }
+    } else if (type === "waypoint") {
+      el.style.cssText = `
+        width: 25px !important;
+        height: 25px !important;
+        background-color: #3b82f6 !important;
+        border: 2px solid white !important;
         border-radius: 50% !important;
-        position: absolute !important;
-        top: 40% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
+        cursor: pointer !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+        position: relative !important;
+        z-index: 1000 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       `;
-      el.appendChild(dot);
+
+      // Add waypoint number or default content
+      const label = document.createElement("div");
+      label.textContent = content || "•";
+      label.style.cssText = `
+        color: white !important;
+        font-size: 10px !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        line-height: 1 !important;
+      `;
+      el.appendChild(label);
+
+      // Add delete button for waypoints
+      if (onDelete) {
+        const deleteBtn = document.createElement("div");
+        deleteBtn.textContent = "×";
+        deleteBtn.style.cssText = `
+          position: absolute !important;
+          top: -8px !important;
+          right: -8px !important;
+          width: 16px !important;
+          height: 16px !important;
+          background-color: #ef4444 !important;
+          color: white !important;
+          border-radius: 50% !important;
+          font-size: 12px !important;
+          font-weight: bold !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          line-height: 1 !important;
+          z-index: 1001 !important;
+        `;
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onDelete();
+        });
+        el.appendChild(deleteBtn);
+      }
     }
 
     // Add data attributes for testing
@@ -221,7 +313,7 @@ export function Marker({
         markerRef.current = null;
       }
     };
-  }, [coordinates, type, map, onClick, onDragStart, onDrag, onDragEnd]);
+  }, [coordinates, type, content, map, onClick, onDelete, onDragStart, onDrag, onDragEnd]);
 
   // Update marker position when coordinates change
   useEffect(() => {
